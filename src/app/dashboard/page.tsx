@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 
 const recentActivities = [
-    { type: 'wheel_spin', description: 'Won 50 TK from Lucky Wheel', time: '2 hours ago', icon: <Gift className="h-4 w-4 text-pink-500" /> },
-    { type: 'raffle_entry', description: 'Entered the Daily Raffle', time: '1 day ago', icon: <Trophy className="h-4 w-4 text-amber-500" /> },
-    { type: 'wheel_spin', description: 'Won 200 PT from Lucky Wheel', time: '2 days ago', icon: <Gift className="h-4 w-4 text-pink-500" /> },
-    { type: 'login', description: 'Logged in successfully', time: '2 days ago', icon: <Activity className="h-4 w-4 text-green-500" /> },
+    { type: 'wheel_spin', description: 'ربحت 50 تذكرة من عجلة الحظ', time: 'منذ ساعتين', icon: <Gift className="h-4 w-4 text-pink-500" /> },
+    { type: 'raffle_entry', description: 'دخلت السحب اليومي', time: 'منذ يوم', icon: <Trophy className="h-4 w-4 text-amber-500" /> },
+    { type: 'wheel_spin', description: 'ربحت 200 نقطة من عجلة الحظ', time: 'منذ يومين', icon: <Gift className="h-4 w-4 text-pink-500" /> },
+    { type: 'login', description: 'تم تسجيل الدخول بنجاح', time: 'منذ يومين', icon: <Activity className="h-4 w-4 text-green-500" /> },
 ]
 
 export default function DashboardPage() {
@@ -17,22 +17,22 @@ export default function DashboardPage() {
             <div className="grid gap-4 md:grid-cols-2">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Your Tickets</CardTitle>
+                        <CardTitle className="text-sm font-medium">تذاكرك</CardTitle>
                         <Ticket className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-4xl font-bold text-primary">1,250 TK</div>
-                        <p className="text-xs text-muted-foreground">Use them to spin the wheel or enter raffles!</p>
+                        <div className="text-4xl font-bold text-primary">1,250 تذكرة</div>
+                        <p className="text-xs text-muted-foreground">استخدمها لتدوير العجلة أو دخول السحوبات!</p>
                     </CardContent>
                 </Card>
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Your Points</CardTitle>
+                        <CardTitle className="text-sm font-medium">نقاطك</CardTitle>
                         <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-4xl font-bold">5,000 PT</div>
-                        <p className="text-xs text-muted-foreground">Climb the leaderboards and show off your score.</p>
+                        <div className="text-4xl font-bold">5,000 نقطة</div>
+                        <p className="text-xs text-muted-foreground">تصدر لوحة المتصدرين واظهر نتيجتك.</p>
                     </CardContent>
                 </Card>
             </div>
@@ -40,15 +40,15 @@ export default function DashboardPage() {
                 <Card className="lg:col-span-4">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
-                          <Activity className="h-5 w-5" /> Recent Activity
+                          <Activity className="h-5 w-5" /> النشاط الأخير
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                          <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Activity</TableHead>
-                                    <TableHead className="text-right">Time</TableHead>
+                                    <TableHead>النشاط</TableHead>
+                                    <TableHead className="text-left">الوقت</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -60,7 +60,7 @@ export default function DashboardPage() {
                                                 <span className="font-medium">{activity.description}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-right text-muted-foreground">{activity.time}</TableCell>
+                                        <TableCell className="text-left text-muted-foreground">{activity.time}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
@@ -69,20 +69,20 @@ export default function DashboardPage() {
                 </Card>
                 <Card className="lg:col-span-3">
                     <CardHeader>
-                        <CardTitle>Quick Actions</CardTitle>
-                        <CardDescription>What would you like to do next?</CardDescription>
+                        <CardTitle>إجراءات سريعة</CardTitle>
+                        <CardDescription>ماذا تود أن تفعل بعد ذلك؟</CardDescription>
                     </CardHeader>
                     <CardContent className="grid gap-4">
                         <Link href="/dashboard/lucky-wheel">
                             <Button className="w-full" size="lg">
-                                <Gift className="mr-2 h-5 w-5" />
-                                Spin the Lucky Wheel
+                                <Gift className="ml-2 h-5 w-5" />
+                                أدر عجلة الحظ
                             </Button>
                         </Link>
                         <Link href="/dashboard/raffle">
                             <Button className="w-full" size="lg" variant="secondary">
-                                <Trophy className="mr-2 h-5 w-5" />
-                                Enter Daily Raffle
+                                <Trophy className="ml-2 h-5 w-5" />
+                                ادخل السحب اليومي
                             </Button>
                         </Link>
                     </CardContent>

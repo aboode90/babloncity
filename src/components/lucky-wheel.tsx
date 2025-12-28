@@ -4,14 +4,14 @@ import { useState } from "react";
 import { Button } from "./ui/button";
 
 const prizes = [
-  { name: "100 TK", color: "#A020F0" },
-  { name: "50 PT", color: "#FF00FF" },
-  { name: "5 TK", color: "#DA70D6" },
-  { name: "Try Again", color: "#E6E6FA" },
-  { name: "200 PT", color: "#A020F0" },
-  { name: "10 TK", color: "#FF00FF" },
-  { name: "50 TK", color: "#DA70D6" },
-  { name: "20 PT", color: "#E6E6FA" },
+  { name: "100 تذكرة", color: "#A020F0" },
+  { name: "50 نقطة", color: "#FF00FF" },
+  { name: "5 تذاكر", color: "#DA70D6" },
+  { name: "حاول مرة أخرى", color: "#E6E6FA" },
+  { name: "200 نقطة", color: "#A020F0" },
+  { name: "10 تذاكر", color: "#FF00FF" },
+  { name: "50 تذكرة", color: "#DA70D6" },
+  { name: "20 نقطة", color: "#E6E6FA" },
 ];
 
 const SEGMENTS = prizes.length;
@@ -99,7 +99,7 @@ export function LuckyWheel() {
           disabled={spinning}
           className="h-20 w-20 md:h-28 md:w-28 rounded-full text-lg md:text-xl font-bold font-headline shadow-2xl"
         >
-          {spinning ? "..." : "SPIN"}
+          {spinning ? "..." : "أدر"}
         </Button>
       </div>
     </div>

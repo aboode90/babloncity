@@ -9,23 +9,23 @@ export function Header() {
         <Link href="/" className="flex items-center gap-2">
           <Gamepad2 className="h-8 w-8 text-primary" />
           <span className="text-xl font-headline font-bold text-foreground">
-            Babylon Block
+            بابلون بلوك
           </span>
         </Link>
         <nav className="hidden md:flex items-center gap-6">
           <Link href="/#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            Features
+            الميزات
           </Link>
           <Link href="/#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-            FAQ
+            الأسئلة الشائعة
           </Link>
         </nav>
         <div className="flex items-center gap-4">
           <Button variant="ghost" asChild>
-            <Link href="/login">Log In</Link>
+            <Link href="/login">تسجيل الدخول</Link>
           </Button>
           <Button asChild>
-            <Link href="/register">Sign Up</Link>
+            <Link href="/register">إنشاء حساب</Link>
           </Button>
         </div>
       </div>

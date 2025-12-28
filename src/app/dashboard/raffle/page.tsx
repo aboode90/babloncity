@@ -27,8 +27,8 @@ export default function RafflePage() {
             <div className="md:col-span-3 flex flex-col gap-8">
                 <Card className="bg-glass shadow-xl">
                     <CardHeader className="text-center">
-                        <CardTitle className="text-3xl md:text-4xl font-headline">Daily Raffle</CardTitle>
-                        <CardDescription>Enter for a chance to win the grand prize!</CardDescription>
+                        <CardTitle className="text-3xl md:text-4xl font-headline">السحب اليومي</CardTitle>
+                        <CardDescription>ادخل لفرصة الفوز بالجائزة الكبرى!</CardDescription>
                     </CardHeader>
                     <CardContent className="flex flex-col items-center gap-6">
                         {prizeImage && (
@@ -43,16 +43,16 @@ export default function RafflePage() {
                             </div>
                         )}
                         <div>
-                            <p className="text-center text-muted-foreground">Today's Prize</p>
-                            <p className="text-3xl font-bold font-headline text-gradient">10,000 Tickets</p>
+                            <p className="text-center text-muted-foreground">جائزة اليوم</p>
+                            <p className="text-3xl font-bold font-headline text-gradient">10,000 تذكرة</p>
                         </div>
                         <Countdown to={raffleEndDate} />
                     </CardContent>
                     <CardFooter className="flex-col gap-2">
                         <Button size="lg" className="w-full max-w-xs">
-                            Enter Raffle (5 TK) <Ticket className="ml-2 h-5 w-5" />
+                            ادخل السحب (5 تذاكر) <Ticket className="mr-2 h-5 w-5" />
                         </Button>
-                        <p className="text-xs text-muted-foreground">You have already entered today's raffle.</p>
+                        <p className="text-xs text-muted-foreground">لقد دخلت بالفعل سحب اليوم.</p>
                     </CardFooter>
                 </Card>
             </div>
@@ -61,9 +61,9 @@ export default function RafflePage() {
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                             <Users className="h-5 w-5" />
-                            Participants ({participants.length})
+                            المشاركون ({participants.length})
                         </CardTitle>
-                        <CardDescription>See who's in the running.</CardDescription>
+                        <CardDescription>انظر من يشارك في السحب.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2">
