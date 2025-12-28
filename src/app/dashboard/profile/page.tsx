@@ -6,41 +6,41 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { CircleUserRound, Edit, Loader } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, doc, limit, orderBy, query } from 'firebase/firestore';
+import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
+import axios from 'axios';
 
 export default function ProfilePage() {
     const avatar = PlaceHolderImages.find(p => p.id === 'avatar1');
-    const { user } = useUser();
-    const firestore = useFirestore();
+    const { data: session } = useSession();
+    const [userData, setUserData] = useState<any>(null);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [joinDate, setJoinDate] = useState('');
 
-
-    const userDocRef = useMemoFirebase(() => {
-        if (!firestore || !user) return null;
-        return doc(firestore, `users/${user.uid}`);
-    }, [firestore, user]);
-
-    const transactionsQuery = useMemoFirebase(() => {
-        if(!user || !firestore) return null;
-        return query(collection(firestore, `users/${user.uid}/transactions`), orderBy('transactionDate', 'desc'), limit(20));
-    }, [user, firestore]);
-
-    const { data: userData } = useDoc(userDocRef);
-    const { data: transactions, isLoading: areTransactionsLoading } = useCollection(transactionsQuery);
-
     useEffect(() => {
-        if (userData?.joinDate) {
-            const date = new Date(userData.joinDate);
-            const formattedDate = date.toLocaleDateString('ar-EG', {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-            setJoinDate(formattedDate);
-        }
-    }, [userData?.joinDate]);
+        const fetchData = async () => {
+            if (session) {
+                try {
+                    const balanceRes = await axios.get('/api/user/balance');
+                    setUserData(balanceRes.data);
+
+                    // Placeholder for user account info and transactions
+                    // const userAccountInfo = await axios.get('/api/user/account');
+                    // setJoinDate(new Date(userAccountInfo.data.Created).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }));
+                    // const transactionsRes = await axios.get('/api/user/transactions');
+                    // setTransactions(transactionsRes.data);
+
+                } catch (error) {
+                    console.error("Failed to fetch user data", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+        fetchData();
+    }, [session]);
+
 
     return (
         <div className="grid gap-6">
@@ -60,8 +60,8 @@ export default function ProfilePage() {
                             <CircleUserRound className="h-24 w-24 text-muted-foreground" />
                         )}
                         <div className="flex-grow">
-                            <CardTitle className="text-2xl font-headline">{userData?.username || '...'}</CardTitle>
-                            <CardDescription>{userData?.email || '...'}</CardDescription>
+                            <CardTitle className="text-2xl font-headline">{session?.user?.name || '...'}</CardTitle>
+                            <CardDescription>{session?.user?.email || '...'}</CardDescription>
                             <p className="text-sm text-muted-foreground mt-2">
                                 {joinDate ? `انضم في ${joinDate}`: '...'}
                             </p>
@@ -76,11 +76,11 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div>
                             <p className="text-sm text-muted-foreground">التذاكر (TK)</p>
-                            <p className="text-2xl font-bold">{userData?.tickets ?? '0'}</p>
+                            <p className="text-2xl font-bold">{isLoading ? <Loader className="h-6 w-6 animate-spin" /> : userData?.tickets ?? '0'}</p>
                         </div>
                          <div>
                             <p className="text-sm text-muted-foreground">النقاط (PT)</p>
-                            <p className="text-2xl font-bold">{userData?.points ?? '0'}</p>
+                            <p className="text-2xl font-bold">{isLoading ? <Loader className="h-6 w-6 animate-spin" /> : userData?.points ?? '0'}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -91,7 +91,7 @@ export default function ProfilePage() {
                     <CardDescription>نشاط حسابك الأخير.</CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {areTransactionsLoading ? (
+                    {isLoading ? (
                         <div className="flex justify-center items-center h-40">
                             <Loader className="h-8 w-8 animate-spin text-primary" />
                         </div>

@@ -7,106 +7,29 @@ import { Countdown } from '@/components/countdown';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Ticket, Loader } from 'lucide-react';
-import { useCollection, useFirestore, useUser, useDoc, useMemoFirebase, addDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, query, where, limit, doc, getDocs } from 'firebase/firestore';
+import { useSession } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function RafflePage() {
     const prizeImage = PlaceHolderImages.find(p => p.id === 'raffle-prize');
-    const { user } = useUser();
-    const firestore = useFirestore();
+    const { data: session } = useSession();
     const { toast } = useToast();
 
-    // Query for the active raffle
-    const activeRaffleQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'raffles'), where('status', '==', 'active'), limit(1));
-    }, [firestore]);
-
-    const { data: activeRaffles, isLoading: isRaffleLoading } = useCollection(activeRaffleQuery);
-    const activeRaffle = activeRaffles?.[0];
-
-    // Get user data
-    const userDocRef = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
-        return doc(firestore, `users/${user.uid}`);
-    }, [user, firestore]);
-    const { data: userData } = useDoc(userDocRef);
-
-    // Get participants for the active raffle
-    const participantsQuery = useMemoFirebase(() => {
-        if (!firestore || !activeRaffle) return null;
-        return collection(firestore, `raffles/${activeRaffle.id}/raffleEntries`);
-    }, [firestore, activeRaffle]);
-    const { data: participants, isLoading: areParticipantsLoading } = useCollection(participantsQuery);
-
-    // Check if the current user has already entered the raffle
-    const userEntryQuery = useMemoFirebase(() => {
-        if (!firestore || !activeRaffle || !user) return null;
-        return query(collection(firestore, `raffles/${activeRaffle.id}/raffleEntries`), where('userId', '==', user.uid), limit(1));
-    }, [firestore, activeRaffle, user]);
-    const { data: userEntry, isLoading: isUserEntryLoading } = useCollection(userEntryQuery);
-    const hasUserEntered = userEntry && userEntry.length > 0;
+    // TODO: Re-implement logic
+    const isLoading = true;
+    const activeRaffle: any = null;
+    const participants: any[] = [];
+    const hasUserEntered = false;
 
     const handleEnterRaffle = async () => {
-        if (!user || !firestore || !activeRaffle || !userData || hasUserEntered) return;
-
-        const cost = activeRaffle.ticketCost || 5;
-
-        if (userData.tickets < cost) {
-            toast({
-                variant: 'destructive',
-                title: 'رصيد غير كاف',
-                description: `أنت بحاجة إلى ${cost} تذاكر على الأقل لدخول السحب.`,
-            });
-            return;
-        }
-
-        // Disable button to prevent multiple entries
-        toast({ title: 'جاري تسجيل دخولك في السحب...' });
-
-        try {
-            // 1. Deduct tickets
-            updateDocumentNonBlocking(userDocRef, { tickets: userData.tickets - cost });
-
-            // 2. Log transaction for ticket deduction
-            const transactionsColRef = collection(firestore, `users/${user.uid}/transactions`);
-            addDocumentNonBlocking(transactionsColRef, {
-                userId: user.uid,
-                transactionDate: new Date().toISOString(),
-                currencyType: 'Tickets',
-                amount: -cost,
-                description: `دخول السحب اليومي #${activeRaffle.id}`,
-            });
-
-            // 3. Add raffle entry
-            const raffleEntriesColRef = collection(firestore, `raffles/${activeRaffle.id}/raffleEntries`);
-            await addDocumentNonBlocking(raffleEntriesColRef, {
-                userId: user.uid,
-                raffleId: activeRaffle.id,
-                entryDate: new Date().toISOString(),
-                username: userData.username,
-            });
-
-            toast({
-                title: 'تم بنجاح!',
-                description: 'لقد دخلت السحب اليومي. حظا موفقا!',
-            });
-
-        } catch (error) {
-            console.error("Error entering raffle: ", error);
-            // Re-add tickets if entry failed
-            updateDocumentNonBlocking(userDocRef, { tickets: userData.tickets });
-            toast({
-                variant: 'destructive',
-                title: 'حدث خطأ ما',
-                description: 'لم نتمكن من تسجيل دخولك في السحب. يرجى المحاولة مرة أخرى.',
-            });
-        }
+         if (!session || !activeRaffle || hasUserEntered) return;
+         toast({
+            variant: 'destructive',
+            title: 'خطأ',
+            description: `قيد التطوير.`,
+        });
     };
     
-    const isLoading = isRaffleLoading || areParticipantsLoading || isUserEntryLoading;
-
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-96">
@@ -182,13 +105,13 @@ export default function RafflePage() {
                         <CardDescription>انظر من يشارك في السحب.</CardDescription>
                     </CardHeader>
                     <CardContent>
-                        {areParticipantsLoading ? (
+                        {isLoading ? (
                              <div className="flex justify-center items-center h-40">
                                 <Loader className="h-8 w-8 animate-spin text-primary" />
                              </div>
                         ) : (
                         <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2">
-                            {participants && participants.length > 0 ? participants.map(p => (
+                            {participants && participants.length > 0 ? participants.map((p: any) => (
                                 <div key={p.id} className="flex items-center gap-4">
                                     <Avatar>
                                         <AvatarImage src={`https://picsum.photos/seed/${p.userId}/100/100`} />

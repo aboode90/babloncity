@@ -5,33 +5,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { MoreHorizontal, Loader } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Countdown } from "@/components/countdown";
-import { useCollection, useFirestore, useMemoFirebase, updateDocumentNonBlocking, addDocumentNonBlocking } from "@/firebase";
-import { collection, query, where, limit, getDocs, doc } from "firebase/firestore";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function AdminRafflesPage() {
-    const firestore = useFirestore();
     const { toast } = useToast();
     const [isEndingRaffle, setIsEndingRaffle] = useState(false);
 
-    const activeRaffleQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return query(collection(firestore, 'raffles'), where('status', '==', 'active'), limit(1));
-    }, [firestore]);
-
-    const { data: activeRaffles, isLoading: isRaffleLoading } = useCollection(activeRaffleQuery);
-    const activeRaffle = activeRaffles?.[0];
-
-    const participantsQuery = useMemoFirebase(() => {
-        if (!firestore || !activeRaffle) return null;
-        return collection(firestore, `raffles/${activeRaffle.id}/raffleEntries`);
-    }, [firestore, activeRaffle]);
-
-    const { data: participants, isLoading: areParticipantsLoading } = useCollection(participantsQuery);
-
+    const activeRaffle = null; // Placeholder
+    const participants: any[] = []; // Placeholder
+    const areParticipantsLoading = true;
+    const isRaffleLoading = true;
+    
     const handleEndRaffle = async () => {
-        if (!firestore || !activeRaffle || !participants || participants.length === 0) {
+        if (!activeRaffle || !participants || participants.length === 0) {
             toast({
                 variant: "destructive",
                 title: "لا يمكن إنهاء السحب",
@@ -43,65 +30,15 @@ export default function AdminRafflesPage() {
         setIsEndingRaffle(true);
         toast({ title: "جاري إنهاء السحب واختيار الفائز..." });
 
-        try {
-            // 1. Pick a random winner
-            const winnerEntry = participants[Math.floor(Math.random() * participants.length)];
-            const winnerId = winnerEntry.userId;
-            const winnerUsername = winnerEntry.username;
-
-            // 2. Update the raffle document
-            const raffleDocRef = doc(firestore, 'raffles', activeRaffle.id);
-            updateDocumentNonBlocking(raffleDocRef, {
-                status: 'completed',
-                winnerId: winnerId
-            });
-
-            // 3. Update the winner's balance
-            const userDocRef = doc(firestore, 'users', winnerId);
-            // We need to get the user's current balance first, which is not ideal without a backend function.
-            // For now, we assume this operation would be handled by a Cloud Function for atomicity.
-            // Let's simulate by just adding a transaction. A proper implementation would use a transaction or Cloud Function.
-            // Note: This is a simplified approach. A robust solution needs atomic server-side updates.
-            // We'll add the prize and create a transaction record.
-            const userSnap = await getDocs(query(collection(firestore, 'users'), where('id', '==', winnerId)));
-            if (!userSnap.empty) {
-                const userDoc = userSnap.docs[0];
-                const userData = userDoc.data();
-                
-                const updatePayload: { [key: string]: any } = {};
-                if (activeRaffle.prizeType === 'Tickets') {
-                    updatePayload.tickets = (userData.tickets || 0) + activeRaffle.prizeAmount;
-                } else if (activeRaffle.prizeType === 'Points') {
-                    updatePayload.points = (userData.points || 0) + activeRaffle.prizeAmount;
-                }
-                
-                updateDocumentNonBlocking(userDoc.ref, updatePayload);
-
-                 // 4. Log transaction for the winner
-                const transactionsColRef = collection(firestore, `users/${winnerId}/transactions`);
-                addDocumentNonBlocking(transactionsColRef, {
-                    userId: winnerId,
-                    transactionDate: new Date().toISOString(),
-                    currencyType: activeRaffle.prizeType,
-                    amount: activeRaffle.prizeAmount,
-                    description: `الفوز في السحب اليومي #${activeRaffle.id.slice(0,5)}`,
-                });
-            }
-
-            toast({
-                title: "تم اختيار الفائز!",
-                description: `تهانينا لـ '${winnerUsername}'! لقد فاز بـ ${activeRaffle.prizeAmount} ${activeRaffle.prizeType === 'Tickets' ? 'تذكرة' : 'نقطة'}.`,
-            });
-        } catch (error) {
-            console.error("Error ending raffle:", error);
-            toast({
+        // Logic will be implemented later
+        setTimeout(() => {
+             toast({
                 variant: "destructive",
                 title: "حدث خطأ",
                 description: "لم نتمكن من إنهاء السحب. يرجى المحاولة مرة أخرى."
             });
-        } finally {
             setIsEndingRaffle(false);
-        }
+        }, 2000);
     };
 
     const isLoading = isRaffleLoading || areParticipantsLoading;
@@ -130,7 +67,7 @@ export default function AdminRafflesPage() {
         );
     }
     
-    const raffleEndDate = new Date(activeRaffle.endDate);
+    const raffleEndDate = new Date(); // Placeholder
 
     return (
         <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
@@ -139,7 +76,7 @@ export default function AdminRafflesPage() {
                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
                         <div>
                             <CardTitle>السحب اليومي الحالي</CardTitle>
-                            <CardDescription>السحب رقم {activeRaffle.id.slice(0, 5)} - ينتهي في:</CardDescription>
+                            {/* <CardDescription>السحب رقم {activeRaffle.id.slice(0, 5)} - ينتهي في:</CardDescription> */}
                         </div>
                         <div className="flex gap-2">
                             <Button variant="outline">بدء سحب جديد</Button>
@@ -153,7 +90,7 @@ export default function AdminRafflesPage() {
                     <div className="flex items-center justify-between rounded-lg border p-4">
                         <div>
                             <p className="text-sm font-medium text-muted-foreground">الجائزة</p>
-                            <p className="text-lg font-semibold">{activeRaffle.prizeAmount.toLocaleString()} {activeRaffle.prizeType === 'Tickets' ? 'تذكرة' : 'نقطة'}</p>
+                            <p className="text-lg font-semibold">0</p>
                         </div>
                         <div className="text-center">
                             <p className="text-sm font-medium text-muted-foreground">الوقت المتبقي</p>
@@ -182,7 +119,7 @@ export default function AdminRafflesPage() {
                                             <TableCell colSpan={3} className="text-center h-24"><Loader className="h-6 w-6 animate-spin mx-auto"/></TableCell>
                                         </TableRow>
                                     ) : participants && participants.length > 0 ? (
-                                        participants.map(p => (
+                                        participants.map((p: any) => (
                                             <TableRow key={p.id}>
                                                 <TableCell className="font-medium">{p.username}</TableCell>
                                                 <TableCell>{new Date(p.entryDate).toLocaleString('ar-EG')}</TableCell>

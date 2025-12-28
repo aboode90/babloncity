@@ -5,25 +5,36 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Ticket, CircleDollarSign, Activity, Gift, Trophy, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { collection, doc, limit, orderBy, query } from "firebase/firestore";
+import { useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
+import axios from 'axios';
 
 export default function DashboardPage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
+    const { data: session } = useSession();
+    const [userData, setUserData] = useState<any>(null);
+    const [transactions, setTransactions] = useState<any[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const userDocRef = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
-        return doc(firestore, `users/${user.uid}`);
-    }, [user, firestore]);
+    useEffect(() => {
+        const fetchData = async () => {
+            if (session) {
+                try {
+                    const balanceRes = await axios.get('/api/user/balance');
+                    setUserData(balanceRes.data);
 
-    const transactionsQuery = useMemoFirebase(() => {
-        if(!user || !firestore) return null;
-        return query(collection(firestore, `users/${user.uid}/transactions`), orderBy('transactionDate', 'desc'), limit(5));
-    }, [user, firestore]);
+                    // TODO: Fetch transactions once API is ready
+                    setTransactions([]);
 
-    const { data: userData, isLoading: isUserLoading } = useDoc(userDocRef);
-    const { data: transactions, isLoading: areTransactionsLoading } = useCollection(transactionsQuery);
+                } catch (error) {
+                    console.error("Failed to fetch user data", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            }
+        };
+        fetchData();
+    }, [session]);
+
 
     const getTransactionIcon = (description: string) => {
         if (description.includes('عجلة الحظ')) return <Gift className="h-4 w-4 text-pink-500" />;
@@ -60,7 +71,7 @@ export default function DashboardPage() {
                         <Ticket className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {isUserLoading ? (
+                        {isLoading ? (
                             <Loader className="h-8 w-8 animate-spin" />
                         ) : (
                             <div className="text-4xl font-bold text-primary">{userData?.tickets?.toLocaleString() ?? 0} تذكرة</div>
@@ -74,7 +85,7 @@ export default function DashboardPage() {
                         <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        {isUserLoading ? (
+                        {isLoading ? (
                            <Loader className="h-8 w-8 animate-spin" />
                         ) : (
                             <div className="text-4xl font-bold">{userData?.points?.toLocaleString() ?? 0} نقطة</div>
@@ -91,7 +102,7 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        {areTransactionsLoading ? (
+                        {isLoading ? (
                              <div className="flex justify-center items-center h-40">
                                 <Loader className="h-8 w-8 animate-spin text-primary" />
                              </div>

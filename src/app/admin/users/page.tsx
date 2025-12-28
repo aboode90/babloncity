@@ -14,19 +14,14 @@ import { Button } from "@/components/ui/button"
 import { MoreHorizontal, PlusCircle, Search, Loader } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase"
-import { collection } from "firebase/firestore"
 
 export default function AdminUsersPage() {
-    const firestore = useFirestore();
-    const usersQuery = useMemoFirebase(() => {
-        if (!firestore) return null;
-        return collection(firestore, 'users');
-    }, [firestore]);
-
-    const { data: users, isLoading } = useCollection(usersQuery);
+    
+    const users: any[] = [];
+    const isLoading = true;
 
     const getUserStatus = (lastLogin: string) => {
+        if(!lastLogin) return 'غير نشط';
         const lastLoginDate = new Date(lastLogin);
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -83,12 +78,12 @@ export default function AdminUsersPage() {
                                 <TableRow key={user.id}>
                                     <TableCell className="font-medium">{user.username}</TableCell>
                                     <TableCell>{user.email}</TableCell>
-                                    <TableCell className="text-left">{user.tickets.toLocaleString()}</TableCell>
-                                    <TableCell className="text-left">{user.points.toLocaleString()}</TableCell>
+                                    <TableCell className="text-left">{user.tickets?.toLocaleString() || 0}</TableCell>
+                                    <TableCell className="text-left">{user.points?.toLocaleString() || 0}</TableCell>
                                     <TableCell>
                                         <Badge variant={getUserStatus(user.lastLogin) === 'غير نشط' ? 'destructive' : 'outline'}>{getUserStatus(user.lastLogin)}</Badge>
                                     </TableCell>
-                                    <TableCell>{new Date(user.lastLogin).toLocaleDateString('ar-EG')}</TableCell>
+                                    <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ar-EG') : 'N/A'}</TableCell>
                                     <TableCell>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>

@@ -2,24 +2,18 @@
 
 import { LuckyWheel } from "@/components/lucky-wheel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
 import { Gift, Loader } from "lucide-react";
-import { doc } from 'firebase/firestore';
 
 const prizes = [
   "100 تذكرة", "50 نقطة", "5 تذاكر", "حاول مرة أخرى", "200 نقطة", "10 تذاكر", "50 تذكرة", "20 نقطة"
 ];
 
 export default function LuckyWheelPage() {
-    const { user } = useUser();
-    const firestore = useFirestore();
 
-    const userDocRef = useMemoFirebase(() => {
-        if (!user || !firestore) return null;
-        return doc(firestore, `users/${user.uid}`);
-    }, [user, firestore]);
-
-    const { data: userData, isLoading: isUserLoading } = useDoc(userDocRef);
+    // TODO: Re-implement logic to fetch user data
+    const isUserLoading = true;
+    const user = null;
+    const userData = null;
 
     return (
         <div className="container mx-auto py-8">
