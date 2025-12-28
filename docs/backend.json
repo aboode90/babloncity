@@ -114,13 +114,18 @@
           "type": "string",
           "description": "Date and time when the user entered the raffle.",
           "format": "date-time"
+        },
+        "username": {
+          "type": "string",
+          "description": "Denormalized username for display purposes."
         }
       },
       "required": [
         "id",
         "userId",
         "raffleId",
-        "entryDate"
+        "entryDate",
+        "username"
       ]
     },
     "Raffle": {
@@ -145,11 +150,25 @@
         },
         "prizeType": {
           "type": "string",
-          "description": "The type of prize offered in the raffle (e.g., 'Tickets', 'Points')."
+          "description": "The type of prize offered in the raffle (e.g., 'Tickets', 'Points').",
+          "enum": ["Tickets", "Points"]
         },
         "prizeAmount": {
           "type": "number",
           "description": "The amount of the prize offered."
+        },
+        "ticketCost": {
+            "type": "number",
+            "description": "The cost in tickets to enter the raffle."
+        },
+        "status": {
+            "type": "string",
+            "description": "The current status of the raffle.",
+            "enum": ["active", "drawing", "completed"]
+        },
+        "winnerId": {
+            "type": "string",
+            "description": "The ID of the winning user."
         }
       },
       "required": [
@@ -157,7 +176,9 @@
         "startDate",
         "endDate",
         "prizeType",
-        "prizeAmount"
+        "prizeAmount",
+        "ticketCost",
+        "status"
       ]
     },
     "Transaction": {
@@ -319,6 +340,6 @@
         }
       }
     ],
-    "reasoning": "The Firestore data structure is designed to support the features of the Babylon Block Portal, emphasizing security, scalability, and ease of querying. The design prioritizes Authorization Independence by denormalizing relevant authorization data, avoiding hierarchical `get()` calls in security rules. It leverages Structural Segregation to ensure collections contain documents with homogeneous security postures and employs Access Modeling to standardize authorization patterns.\n\n*   **Users:** User data is stored in a `users` collection, secured using path-based ownership. Admin status is managed via a separate `roles_admin` collection, promoting clear and efficient security rules.\n*   **Lucky Wheel Spins:** Lucky wheel spin data is stored in subcollections under each user, ensuring data isolation and ownership. This adheres to the 1:N relationship and is secured using path-based rules.\n*   **Raffle and Raffle Entries:** Raffle data is stored in a top-level `raffles` collection. Raffle entries are stored as a subcollection under each raffle, with denormalized `userId` and `userProfile` to ensure each entry's author can be validated directly. The current active raffle is stored in a separate `active_raffles` collection to optimize reads for displaying raffle information.\n*   **Transactions:** Transaction data is stored in subcollections under each user, secured using path-based ownership. This allows efficient querying of a user's transaction history.\n\nThis structure enables secure `list` operations (QAPs) by segregating data based on ownership and access requirements. It avoids using rules as filters by ensuring that each collection inherently contains data that satisfies its security constraints."
+    "reasoning": "The Firestore data structure is designed to support the features of the Babylon Block Portal, emphasizing security, scalability, and ease of querying. The design prioritizes Authorization Independence by denormalizing relevant authorization data, avoiding hierarchical `get()` calls in security rules. It leverages Structural Segregation to ensure collections contain documents with homogeneous security postures and employs Access Modeling to standardize authorization patterns.\n\n*   **Users:** User data is stored in a `users` collection, secured using path-based ownership. Admin status is managed via a separate `roles_admin` collection, promoting clear and efficient security rules.\n*   **Lucky Wheel Spins:** Lucky wheel spin data is stored in subcollections under each user, ensuring data isolation and ownership. This adheres to the 1:N relationship and is secured using path-based rules.\n*   **Raffle and Raffle Entries:** Raffle data is stored in a top-level `raffles` collection. Raffle entries are stored as a subcollection under each raffle, with denormalized `userId` and `username` to ensure each entry's author can be validated directly and displayed efficiently. The current active raffle can be queried by its status.\n*   **Transactions:** Transaction data is stored in subcollections under each user, secured using path-based ownership. This allows efficient querying of a user's transaction history.\n\nThis structure enables secure `list` operations (QAPs) by segregating data based on ownership and access requirements. It avoids using rules as filters by ensuring that each collection inherently contains data that satisfies its security constraints."
   }
 }
