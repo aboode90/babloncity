@@ -7,16 +7,19 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Countdown } from "@/components/countdown";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import useSWR, { mutate } from "swr";
+import axios from "axios";
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function AdminRafflesPage() {
     const { toast } = useToast();
     const [isEndingRaffle, setIsEndingRaffle] = useState(false);
 
-    const activeRaffle = null; // Placeholder
-    const participants: any[] = []; // Placeholder
-    const areParticipantsLoading = true;
-    const isRaffleLoading = true;
-    
+    const { data: activeRaffle, isLoading: isRaffleLoading } = useSWR('/api/raffle/current', fetcher);
+    const participants = activeRaffle?.participants ?? [];
+    const areParticipantsLoading = isRaffleLoading;
+
     const handleEndRaffle = async () => {
         if (!activeRaffle || !participants || participants.length === 0) {
             toast({
@@ -30,18 +33,27 @@ export default function AdminRafflesPage() {
         setIsEndingRaffle(true);
         toast({ title: "جاري إنهاء السحب واختيار الفائز..." });
 
-        // Logic will be implemented later
-        setTimeout(() => {
+        try {
+            const response = await axios.post('/api/admin/raffles/end');
+            const { winner, prizeAmount } = response.data;
+            toast({
+                title: "تم إنهاء السحب بنجاح!",
+                description: `الفائز هو ${winner.username}. لقد ربح ${prizeAmount} تذكرة.`,
+            });
+             mutate('/api/raffle/current'); // Re-fetch raffle data
+        } catch (err: any) {
+            const errorMessage = err.response?.data?.error || "لم نتمكن من إنهاء السحب. يرجى المحاولة مرة أخرى.";
              toast({
                 variant: "destructive",
                 title: "حدث خطأ",
-                description: "لم نتمكن من إنهاء السحب. يرجى المحاولة مرة أخرى."
+                description: errorMessage
             });
-            setIsEndingRaffle(false);
-        }, 2000);
+        } finally {
+             setIsEndingRaffle(false);
+        }
     };
 
-    const isLoading = isRaffleLoading || areParticipantsLoading;
+    const isLoading = isRaffleLoading;
 
     if (isLoading && !activeRaffle) {
         return (
@@ -50,24 +62,33 @@ export default function AdminRafflesPage() {
             </div>
         );
     }
-
-    if (!activeRaffle) {
+    
+    if (!activeRaffle || activeRaffle.winner) {
         return (
             <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
                 <Card>
                     <CardHeader>
-                        <CardTitle>لا يوجد سحب نشط حاليًا</CardTitle>
-                        <CardDescription>يمكنك بدء سحب جديد من هنا.</CardDescription>
+                         {activeRaffle?.winner ? (
+                             <>
+                                 <CardTitle>السحب الأخير قد انتهى</CardTitle>
+                                 <CardDescription>الفائز كان {activeRaffle.winner.username}.</CardDescription>
+                             </>
+                         ) : (
+                             <>
+                                <CardTitle>لا يوجد سحب نشط حاليًا</CardTitle>
+                                <CardDescription>يمكنك بدء سحب جديد من هنا.</CardDescription>
+                            </>
+                         )}
                     </CardHeader>
                     <CardContent>
-                        <Button>بدء سحب جديد</Button>
+                        <Button disabled>بدء سحب جديد (قيد التطوير)</Button>
                     </CardContent>
                 </Card>
             </div>
         );
     }
     
-    const raffleEndDate = new Date(); // Placeholder
+    const raffleEndDate = new Date(activeRaffle.endDate);
 
     return (
         <div className="grid auto-rows-max items-start gap-4 md:gap-8 lg:col-span-2">
@@ -76,10 +97,10 @@ export default function AdminRafflesPage() {
                     <div className="flex flex-col md:flex-row justify-between md:items-center gap-2">
                         <div>
                             <CardTitle>السحب اليومي الحالي</CardTitle>
-                            {/* <CardDescription>السحب رقم {activeRaffle.id.slice(0, 5)} - ينتهي في:</CardDescription> */}
+                            <CardDescription>السحب رقم {activeRaffle.id.slice(0, 5)} - ينتهي في:</CardDescription>
                         </div>
                         <div className="flex gap-2">
-                            <Button variant="outline">بدء سحب جديد</Button>
+                            <Button variant="outline" disabled>بدء سحب جديد</Button>
                             <Button variant="destructive" onClick={handleEndRaffle} disabled={isEndingRaffle || (participants && participants.length === 0)}>
                                 {isEndingRaffle ? <Loader className="h-4 w-4 animate-spin"/> : 'إنهاء السحب الآن'}
                             </Button>
@@ -90,7 +111,7 @@ export default function AdminRafflesPage() {
                     <div className="flex items-center justify-between rounded-lg border p-4">
                         <div>
                             <p className="text-sm font-medium text-muted-foreground">الجائزة</p>
-                            <p className="text-lg font-semibold">0</p>
+                            <p className="text-lg font-semibold">{activeRaffle.prizeAmount.toLocaleString()} {activeRaffle.prizeType === 'Tickets' ? 'تذكرة' : 'نقطة'}</p>
                         </div>
                         <div className="text-center">
                             <p className="text-sm font-medium text-muted-foreground">الوقت المتبقي</p>
@@ -120,9 +141,9 @@ export default function AdminRafflesPage() {
                                         </TableRow>
                                     ) : participants && participants.length > 0 ? (
                                         participants.map((p: any) => (
-                                            <TableRow key={p.id}>
+                                            <TableRow key={p.playfabId}>
                                                 <TableCell className="font-medium">{p.username}</TableCell>
-                                                <TableCell>{new Date(p.entryDate).toLocaleString('ar-EG')}</TableCell>
+                                                <TableCell>{new Date(p.timestamp).toLocaleString('ar-EG')}</TableCell>
                                                 <TableCell>
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
@@ -133,8 +154,8 @@ export default function AdminRafflesPage() {
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
                                                             <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                                                            <DropdownMenuItem>عرض الملف الشخصي</DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-destructive">إزالة المشاركة</DropdownMenuItem>
+                                                            <DropdownMenuItem disabled>عرض الملف الشخصي</DropdownMenuItem>
+                                                            <DropdownMenuItem className="text-destructive" disabled>إزالة المشاركة</DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
                                                 </TableCell>
