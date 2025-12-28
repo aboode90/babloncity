@@ -1,10 +1,10 @@
 'use client';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect } from 'react';
 import {
   CircleUserRound,
-  Gamepad2,
   Gift,
   LayoutDashboard,
   LogOut,
@@ -64,7 +64,7 @@ function SidebarContent() {
         <div className="flex h-full max-h-screen flex-col gap-2">
             <div className="flex h-[60px] items-center border-b px-6">
                 <Link href="/" className="flex items-center gap-2 font-semibold font-headline">
-                    <Gamepad2 className="h-6 w-6 text-primary" />
+                    <Image src="https://i.imgur.com/gC4gA5D.png" alt="شعار بابلون بلوك" width={32} height={32} />
                     <span>بابلون بلوك</span>
                 </Link>
             </div>

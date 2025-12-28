@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -9,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Gamepad2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import axios from 'axios';
 import { signIn } from 'next-auth/react';
@@ -69,8 +69,8 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-glass shadow-2xl">
         <CardHeader className="text-center">
-           <div className="flex justify-center items-center gap-2 mb-4">
-            <Gamepad2 className="h-8 w-8 text-primary" />
+           <div className="flex justify-center items-center gap-3 mb-4">
+            <Image src="https://i.imgur.com/gC4gA5D.png" alt="شعار بابلون بلوك" width={40} height={40} />
             <CardTitle className="text-2xl font-headline">إنشاء حساب</CardTitle>
           </div>
           <CardDescription>انضم إلى عالم بابلون بلوك اليوم!</CardDescription>
