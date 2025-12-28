@@ -44,7 +44,7 @@ export default function Home() {
       <Header />
       <main className="flex-grow">
         {/* Hero Section */}
-        <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 text-center">
+        <section className="relative pt-32 pb-20 md:pt-40 md:pb-24 text-center">
             <div className="container mx-auto px-4">
                 <h1 className="font-headline text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight">
                     مرحباً بك في بوابة <span className="text-gradient">بابلون بلوك</span>
@@ -66,7 +66,7 @@ export default function Home() {
         </section>
 
         {/* Features Section */}
-        <section id="features" className="py-20 md:py-32">
+        <section id="features" className="py-16 md:py-20">
           <div className="container mx-auto px-4">
             <div className="text-center">
               <h2 className="font-headline text-3xl md:text-4xl font-bold">ميزات رائعة</h2>
@@ -93,7 +93,7 @@ export default function Home() {
         </section>
         
         {/* FAQ Section */}
-        <section id="faq" className="py-20 md:py-24 bg-card/30">
+        <section id="faq" className="py-16 md:py-20 bg-card/30">
           <div className="container mx-auto px-4">
             <div className="text-center">
               <h2 className="font-headline text-3xl md:text-4xl font-bold">الأسئلة الشائعة</h2>
