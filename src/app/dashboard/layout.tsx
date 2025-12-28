@@ -22,7 +22,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useSession, signOut } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
+import { signOut } from 'next-auth/react';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },

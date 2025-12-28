@@ -11,6 +11,7 @@ import { useSession } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 import useSWR, { mutate } from 'swr';
 import axios from 'axios';
+import { useState } from 'react';
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
@@ -23,7 +24,7 @@ export default function RafflePage() {
     const [isEntering, setIsEntering] = useState(false);
 
     const participants = activeRaffle?.participants ?? [];
-    const hasUserEntered = session && participants.some((p: any) => p.playfabId === session.user.id);
+    const hasUserEntered = session && participants.some((p: any) => p.playfabId === (session.user as any).id);
     
     const handleEnterRaffle = async () => {
          if (!session || !activeRaffle || hasUserEntered || isEntering) return;

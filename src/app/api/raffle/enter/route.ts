@@ -1,16 +1,15 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
 import { ExecuteCloudScript } from '@/lib/playfab';
 
 export async function POST() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
 
-  if (!session?.user?.id) {
+  if (!(session?.user as any)?.id) {
     return NextResponse.json({ error: 'غير مصرح به. يرجى تسجيل الدخول.' }, { status: 401 });
   }
 
-  const playfabId = session.user.id;
+  const playfabId = (session.user as any).id;
 
   try {
     const result = await ExecuteCloudScript({

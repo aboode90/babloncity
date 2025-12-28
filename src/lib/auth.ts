@@ -1,8 +1,9 @@
-import type { NextAuthOptions, User } from 'next-auth';
+import NextAuth from 'next-auth';
+import type { NextAuthConfig } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { LoginWithEmailAddress } from './playfab';
 
-export const authOptions: NextAuthOptions = {
+export const authOptions: NextAuthConfig = {
   providers: [
     CredentialsProvider({
       name: 'Credentials',
@@ -17,15 +18,15 @@ export const authOptions: NextAuthOptions = {
 
         try {
           const result = await LoginWithEmailAddress({
-            Email: credentials.email,
-            Password: credentials.password,
+            Email: credentials.email as string,
+            Password: credentials.password as string,
             InfoRequestParameters: {
               GetUserAccountInfo: true,
             },
           });
           
           if (result.data.SessionTicket && result.data.PlayFabId) {
-            const user: User = {
+            const user = {
                 id: result.data.PlayFabId,
                 email: result.data.InfoResultPayload.AccountInfo.PrivateInfo.Email,
                 name: result.data.InfoResultPayload.AccountInfo.TitleInfo.DisplayName,
@@ -36,7 +37,6 @@ export const authOptions: NextAuthOptions = {
           return null;
         } catch (error: any) {
             console.error('PlayFab Login Error:', error);
-            // The error object from PlayFab SDK has a specific structure
             const errorMessage = error?.response?.data?.errorMessage || 'An unknown error occurred';
             throw new Error(errorMessage);
         }
@@ -51,19 +51,19 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async jwt({ token, user }) {
-        // When a user signs in, the 'user' object is available
         if (user) {
             token.id = user.id; // user.id is the PlayFabId
         }
         return token;
     },
     async session({ session, token }) {
-        // Add PlayFabId to the session object
         if (session.user && token.id) {
-            session.user.id = token.id as string;
+            (session.user as any).id = token.id as string;
         }
         return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
 };
+
+export const { handlers, auth, signIn, signOut } = NextAuth(authOptions);
