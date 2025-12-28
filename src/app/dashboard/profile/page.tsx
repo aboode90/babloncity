@@ -9,38 +9,23 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import useSWR from 'swr';
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function ProfilePage() {
     const avatar = PlaceHolderImages.find(p => p.id === 'avatar1');
     const { data: session } = useSession();
-    const [userData, setUserData] = useState<any>(null);
-    const [transactions, setTransactions] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [joinDate, setJoinDate] = useState('');
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (session) {
-                try {
-                    const balanceRes = await axios.get('/api/user/balance');
-                    setUserData(balanceRes.data);
+    const { data: userData, error: userError, isLoading: isUserLoading } = useSWR(session ? '/api/user/balance' : null, fetcher);
+    const { data: accountData, error: accountError, isLoading: isAccountLoading } = useSWR(session ? '/api/user/account' : null, fetcher);
+     const { data: transactions, error: transactionsError, isLoading: isTransactionsLoading } = useSWR(session ? '/api/user/transactions' : null, fetcher);
 
-                    // Placeholder for user account info and transactions
-                    // const userAccountInfo = await axios.get('/api/user/account');
-                    // setJoinDate(new Date(userAccountInfo.data.Created).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' }));
-                    // const transactionsRes = await axios.get('/api/user/transactions');
-                    // setTransactions(transactionsRes.data);
+    const isLoading = isUserLoading || isAccountLoading || isTransactionsLoading;
 
-                } catch (error) {
-                    console.error("Failed to fetch user data", error);
-                } finally {
-                    setIsLoading(false);
-                }
-            }
-        };
-        fetchData();
-    }, [session]);
-
+    const joinDate = accountData?.Created 
+        ? new Date(accountData.Created).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
+        : '...';
 
     return (
         <div className="grid gap-6">
@@ -63,10 +48,10 @@ export default function ProfilePage() {
                             <CardTitle className="text-2xl font-headline">{session?.user?.name || '...'}</CardTitle>
                             <CardDescription>{session?.user?.email || '...'}</CardDescription>
                             <p className="text-sm text-muted-foreground mt-2">
-                                {joinDate ? `انضم في ${joinDate}`: '...'}
+                                {isAccountLoading ? 'جاري التحميل...' : `انضم في ${joinDate}`}
                             </p>
                         </div>
-                        <Button variant="outline">
+                        <Button variant="outline" disabled>
                             <Edit className="ml-2 h-4 w-4" /> تعديل الملف الشخصي
                         </Button>
                     </div>
@@ -76,11 +61,11 @@ export default function ProfilePage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div>
                             <p className="text-sm text-muted-foreground">التذاكر (TK)</p>
-                            <p className="text-2xl font-bold">{isLoading ? <Loader className="h-6 w-6 animate-spin" /> : userData?.tickets ?? '0'}</p>
+                            <p className="text-2xl font-bold">{isUserLoading ? <Loader className="h-6 w-6 animate-spin" /> : (userData?.tickets?.toLocaleString() ?? '0')}</p>
                         </div>
                          <div>
                             <p className="text-sm text-muted-foreground">النقاط (PT)</p>
-                            <p className="text-2xl font-bold">{isLoading ? <Loader className="h-6 w-6 animate-spin" /> : userData?.points ?? '0'}</p>
+                            <p className="text-2xl font-bold">{isUserLoading ? <Loader className="h-6 w-6 animate-spin" /> : (userData?.points?.toLocaleString() ?? '0')}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -105,20 +90,20 @@ export default function ProfilePage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactions && transactions.length > 0 ? transactions.map((tx) => (
-                                <TableRow key={tx.id}>
+                            {transactions && transactions.length > 0 ? transactions.map((tx: any, index: number) => (
+                                <TableRow key={index}>
                                     <TableCell className="text-muted-foreground">
-                                        {new Date(tx.transactionDate).toLocaleString('ar-EG', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
+                                        {new Date(tx.Timestamp).toLocaleString('ar-EG', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
                                     </TableCell>
-                                    <TableCell className="font-medium">{tx.description}</TableCell>
-                                    <TableCell className={`text-left font-semibold ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
-                                       {tx.amount > 0 ? '+' : ''}
-                                       {tx.amount} {tx.currencyType === 'Tickets' ? 'تذكرة' : 'نقطة'}
+                                    <TableCell className="font-medium">{tx.Description}</TableCell>
+                                    <TableCell className={`text-left font-semibold ${tx.Amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                       {tx.Amount > 0 ? '+' : ''}
+                                       {tx.Amount.toLocaleString()} {tx.Currency}
                                     </TableCell>
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center">لا توجد معاملات لعرضها.</TableCell>
+                                    <TableCell colSpan={3} className="text-center h-24">لا توجد معاملات لعرضها.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
