@@ -57,7 +57,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md bg-glass shadow-2xl">
         <CardHeader className="text-center">
           <div className="flex justify-center items-center gap-2 mb-4">
-            <Image src="https://i.imgur.com/gC4gA5D.png" alt="شعار بابلون بلوك" width={40} height={40} />
+            <Image src="/logo.png" alt="شعار بابلون بلوك" width={40} height={40} />
             <CardTitle className="text-2xl font-headline">بابلون بلوك</CardTitle>
           </div>
           <CardDescription>سجل الدخول إلى حسابك للمتابعة</CardDescription>
