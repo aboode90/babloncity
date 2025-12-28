@@ -14,8 +14,6 @@ export async function POST(req: Request) {
       Password: password,
       Username: username,
       DisplayName: username,
-      // Require both username and email
-      RequireBothUsernameAndEmail: true
     });
 
     if (result.data.SessionTicket) {
