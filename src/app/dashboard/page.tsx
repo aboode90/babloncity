@@ -8,32 +8,18 @@ import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useEffect, useState } from "react";
 import axios from 'axios';
+import useSWR from 'swr';
+
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function DashboardPage() {
-    const { data: session } = useSession();
-    const [userData, setUserData] = useState<any>(null);
-    const [transactions, setTransactions] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            if (session) {
-                try {
-                    const balanceRes = await axios.get('/api/user/balance');
-                    setUserData(balanceRes.data);
-
-                    // TODO: Fetch transactions once API is ready
-                    setTransactions([]);
-
-                } catch (error) {
-                    console.error("Failed to fetch user data", error);
-                } finally {
-                    setIsLoading(false);
-                }
-            }
-        };
-        fetchData();
-    }, [session]);
+    const { data: session, status } = useSession();
+    
+    const { data: userData, isLoading: isBalanceLoading } = useSWR(session ? '/api/user/balance' : null, fetcher);
+    const { data: transactions, isLoading: isTransactionsLoading } = useSWR(session ? '/api/user/transactions' : null, fetcher);
+    
+    const isLoading = status === 'loading' || isBalanceLoading || isTransactionsLoading;
 
 
     const getTransactionIcon = (description: string) => {
@@ -115,15 +101,15 @@ export default function DashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {transactions && transactions.length > 0 ? transactions.map((activity) => (
-                                    <TableRow key={activity.id}>
+                                {transactions && transactions.length > 0 ? transactions.map((activity: any, index: number) => (
+                                    <TableRow key={index}>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                {getTransactionIcon(activity.description)}
-                                                <span className="font-medium">{activity.description}</span>
+                                                {getTransactionIcon(activity.Description)}
+                                                <span className="font-medium">{activity.Description}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-left text-muted-foreground">{formatTimeAgo(activity.transactionDate)}</TableCell>
+                                        <TableCell className="text-left text-muted-foreground">{formatTimeAgo(activity.Timestamp)}</TableCell>
                                     </TableRow>
                                 )) : (
                                     <TableRow>

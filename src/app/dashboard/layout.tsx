@@ -11,6 +11,8 @@ import {
   Trophy,
   PanelLeft,
   Loader,
+  Ticket,
+  CircleDollarSign,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,6 +26,10 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useSession } from 'next-auth/react';
 import { signOut } from 'next-auth/react';
+import useSWR from 'swr';
+import axios from 'axios';
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
@@ -96,6 +102,8 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
+  const { data: balanceData, isLoading: isBalanceLoading } = useSWR(session ? '/api/user/balance' : null, fetcher, { refreshInterval: 15000 });
+
 
   const handleLogout = () => {
     signOut({ callbackUrl: '/login' });
@@ -132,12 +140,13 @@ export default function DashboardLayout({
           </div>
           
           <div className="flex items-center gap-4 text-sm font-medium">
-            {/* TODO: Fetch and display balance from PlayFab */}
-            <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1">
-                <span className='font-semibold text-primary'>0 تذكرة</span>
+             <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1">
+                <Ticket className="h-4 w-4 text-primary"/>
+                {isBalanceLoading ? <Loader className="h-4 w-4 animate-spin"/> : <span className='font-semibold text-primary'>{balanceData?.tickets?.toLocaleString() ?? 0}</span>}
             </div>
              <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1">
-                <span className='font-semibold text-accent-foreground'>0 نقطة</span>
+                <CircleDollarSign className="h-4 w-4 text-accent-foreground/80"/>
+                {isBalanceLoading ? <Loader className="h-4 w-4 animate-spin"/> :  <span className='font-semibold text-accent-foreground'>{balanceData?.points?.toLocaleString() ?? 0}</span>}
             </div>
           </div>
           
