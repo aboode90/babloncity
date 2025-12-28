@@ -2,18 +2,23 @@
 
 import { LuckyWheel } from "@/components/lucky-wheel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSession } from "next-auth/react";
 import { Gift, Loader } from "lucide-react";
+import useSWR from 'swr';
+import axios from 'axios';
 
 const prizes = [
   "100 تذكرة", "50 نقطة", "5 تذاكر", "حاول مرة أخرى", "200 نقطة", "10 تذاكر", "50 تذكرة", "20 نقطة"
 ];
 
-export default function LuckyWheelPage() {
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
-    // TODO: Re-implement logic to fetch user data
-    const isUserLoading = true;
-    const user = null;
-    const userData = null;
+
+export default function LuckyWheelPage() {
+    const { data: session, status } = useSession();
+    const { data: userData, error: userError } = useSWR(session ? '/api/user/balance' : null, fetcher);
+
+    const isUserLoading = status === 'loading' || (!userData && !userError);
 
     return (
         <div className="container mx-auto py-8">
@@ -28,7 +33,7 @@ export default function LuckyWheelPage() {
                             <Loader className="h-12 w-12 animate-spin text-primary" />
                         </div>
                     ) : (
-                        <LuckyWheel user={user} userData={userData} />
+                        <LuckyWheel user={session?.user} userData={userData} />
                     )}
                     <div className="text-center">
                         <h3 className="text-lg font-semibold flex items-center justify-center gap-2">

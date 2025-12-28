@@ -1,8 +1,10 @@
 "use client"
 
 import { useState } from "react";
+import axios from 'axios';
 import { Button } from "./ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { useSession } from "next-auth/react";
 
 // Define the prize structure with types and amounts
 const prizes = [
@@ -29,20 +31,51 @@ export function LuckyWheel({ user, userData }: LuckyWheelProps) {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const { toast } = useToast();
+  const { data: session } = useSession();
 
-  const spin = () => {
-    if (spinning || !user || !userData) return;
+
+  const spin = async () => {
+    if (spinning || !session) return;
     
-    // Logic will be re-implemented with API routes
-    toast({
-        variant: "destructive",
-        title: "خطأ",
-        description: "قيد التطوير.",
-    });
+    setSpinning(true);
 
-    return;
+    try {
+        const response = await axios.post('/api/wheel/spin');
+        const { prize, newBalance } = response.data;
 
-    // TODO: Re-implement spin logic
+        // Find the prize index to determine the rotation
+        const prizeIndex = prizes.findIndex(p => p.name === prize.name);
+        
+        // Calculate rotation
+        // Add random offset inside the segment
+        const randomOffset = Math.random() * (SEGMENT_ANGLE - 4) - (SEGMENT_ANGLE / 2 - 2);
+        const targetRotation = 360 * 5 - (prizeIndex * SEGMENT_ANGLE) - randomOffset;
+
+        setRotation(rotation + targetRotation);
+
+        // Wait for animation to finish
+        setTimeout(() => {
+            setSpinning(false);
+            toast({
+                title: "تهانينا!",
+                description: `لقد فزت بـ: ${prize.name}`,
+            });
+            // TODO: Update user balance in the UI. 
+            // This is complex and requires state management (e.g. React Context or Zustand)
+            // For now, we can just reload the page to show the new balance.
+            window.location.reload(); 
+        }, 5500); // 5000ms for animation + 500ms buffer
+
+    } catch (error: any) {
+        console.error("Spin error:", error);
+        const errorMessage = error.response?.data?.error || "حدث خطأ أثناء تدوير العجلة.";
+        toast({
+            variant: "destructive",
+            title: "خطأ",
+            description: errorMessage,
+        });
+        setSpinning(false);
+    }
   };
 
   return (
@@ -106,7 +139,7 @@ export function LuckyWheel({ user, userData }: LuckyWheelProps) {
         <Button
           size="lg"
           onClick={spin}
-          disabled={spinning || !user || !userData}
+          disabled={spinning || !session}
           className="h-20 w-20 md:h-28 md:w-28 rounded-full text-lg md:text-xl font-bold font-headline shadow-2xl"
         >
           {spinning ? "..." : "أدر"}
