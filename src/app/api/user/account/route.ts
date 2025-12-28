@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
-import { GetUserAccountInfo } from '@/lib/playfab';
+import { GetUserInventory } from '@/lib/playfab';
 
 export async function GET() {
   const session = await auth();
@@ -12,16 +12,19 @@ export async function GET() {
   const playfabId = (session.user as any).id;
 
   try {
-    const result = await GetUserAccountInfo({ PlayFabId: playfabId });
-    
-    if (result.data.UserInfo) {
-         return NextResponse.json(result.data.UserInfo, { status: 200 });
-    } else {
-        return NextResponse.json({ error: 'لم يتم العثور على معلومات الحساب.' }, { status: 404 });
-    }
+    const result = await GetUserInventory({ PlayFabId: playfabId });
 
+    if (result.data) {
+      return NextResponse.json({
+        PlayFabId: playfabId,
+        VirtualCurrency: result.data.VirtualCurrency || { TK: 0, PT: 0 },
+        Inventory: result.data.Inventory || [],
+      }, { status: 200 });
+    } else {
+      return NextResponse.json({ error: 'لم يتم العثور على معلومات الحساب.' }, { status: 404 });
+    }
   } catch (error: any) {
-    console.error('PlayFab Get Account Info API Error:', error);
+    console.error('PlayFab Get Inventory Error:', error);
     const errorMessage = error?.response?.data?.errorMessage || 'حدث خطأ غير متوقع أثناء جلب معلومات الحساب.';
     return NextResponse.json({ error: errorMessage }, { status: 500 });
   }

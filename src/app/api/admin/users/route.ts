@@ -1,6 +1,7 @@
+
 import { NextResponse } from 'next/server';
 import { PlayFabServer } from 'playfab-sdk';
-import { GetUserAccountInfo, GetUserInventory } from '@/lib/playfab';
+import { AddUserVirtualCurrency, GetUserAccountInfo, GetUserInventory, SubtractUserVirtualCurrency } from '@/lib/playfab';
 
 // This is a simplified function to get all users.
 // PlayFab's GetPlayersInSegment is more efficient for large numbers of users,
@@ -56,4 +57,40 @@ export async function GET() {
     console.error('Failed to get users:', error);
     return NextResponse.json({ error: 'Failed to fetch user data', message: error.response?.data?.errorMessage }, { status: 500 });
   }
+}
+
+export async function POST(req: Request) {
+    try {
+        const { playFabId, currencyCode, amount } = await req.json();
+
+        if (!playFabId || !currencyCode || amount === undefined) {
+            return NextResponse.json({ error: 'Missing required fields: playFabId, currencyCode, amount' }, { status: 400 });
+        }
+
+        const parsedAmount = parseInt(amount, 10);
+        if (isNaN(parsedAmount)) {
+            return NextResponse.json({ error: 'Invalid amount' }, { status: 400 });
+        }
+
+        let result;
+        if (parsedAmount > 0) {
+            result = await AddUserVirtualCurrency({
+                PlayFabId: playFabId,
+                VirtualCurrency: currencyCode,
+                Amount: parsedAmount,
+            });
+        } else {
+            result = await SubtractUserVirtualCurrency({
+                PlayFabId: playFabId,
+                VirtualCurrency: currencyCode,
+                Amount: Math.abs(parsedAmount),
+            });
+        }
+
+        return NextResponse.json(result.data);
+
+    } catch (error: any) {
+        console.error('Failed to update currency:', error);
+        return NextResponse.json({ error: 'Failed to update currency', message: error.response?.data?.errorMessage }, { status: 500 });
+    }
 }
