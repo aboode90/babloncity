@@ -33,6 +33,7 @@ export default function DashboardPage() {
     };
 
     const formatTimeAgo = (isoDate: string) => {
+        if (!isoDate) return '';
         const date = new Date(isoDate);
         const now = new Date();
         const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
@@ -62,7 +63,7 @@ export default function DashboardPage() {
                         {isUserLoading ? (
                             <Loader className="h-8 w-8 animate-spin" />
                         ) : (
-                            <div className="text-4xl font-bold text-primary">{userData?.tickets ?? 0} تذكرة</div>
+                            <div className="text-4xl font-bold text-primary">{userData?.tickets?.toLocaleString() ?? 0} تذكرة</div>
                         )}
                         <p className="text-xs text-muted-foreground">استخدمها لتدوير العجلة أو دخول السحوبات!</p>
                     </CardContent>
@@ -76,7 +77,7 @@ export default function DashboardPage() {
                         {isUserLoading ? (
                            <Loader className="h-8 w-8 animate-spin" />
                         ) : (
-                            <div className="text-4xl font-bold">{userData?.points ?? 0} نقطة</div>
+                            <div className="text-4xl font-bold">{userData?.points?.toLocaleString() ?? 0} نقطة</div>
                         )}
                         <p className="text-xs text-muted-foreground">تصدر لوحة المتصدرين واظهر نتيجتك.</p>
                     </CardContent>
