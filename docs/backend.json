@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "User": {
@@ -36,14 +37,23 @@
         "isAdmin": {
           "type": "boolean",
           "description": "Indicates if the user is an administrator."
+        },
+        "tickets": {
+            "type": "number",
+            "description": "The number of tickets the user has."
+        },
+        "points": {
+            "type": "number",
+            "description": "The number of points the user has."
         }
       },
       "required": [
         "id",
-        "playFabId",
         "email",
         "username",
-        "joinDate"
+        "joinDate",
+        "tickets",
+        "points"
       ]
     },
     "LuckyWheelSpin": {

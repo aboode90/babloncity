@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import React, { useEffect } from 'react';
+import React, 'useEffect, useMemo } from 'react';
 import {
   CircleUserRound,
   Gamepad2,
@@ -22,7 +22,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
@@ -52,6 +53,14 @@ function SidebarNav({ items }: { items: typeof navItems }) {
 
 function SidebarContent() {
     const { user } = useUser();
+    const firestore = useFirestore();
+
+    const userDocRef = useMemoFirebase(() => {
+      if (!firestore || !user) return null;
+      return doc(firestore, `users/${user.uid}`);
+    }, [firestore, user]);
+
+    const { data: userData } = useDoc(userDocRef);
 
     return (
         <div className="flex h-full max-h-screen flex-col gap-2">
@@ -78,7 +87,7 @@ function SidebarContent() {
                             <CircleUserRound className="h-5 w-5"/>
                         </Button>
                         <div className="flex flex-col">
-                            <span className="text-sm font-medium">{user?.displayName || 'اسم المستخدم'}</span>
+                            <span className="text-sm font-medium">{userData?.username || user?.displayName || 'اسم المستخدم'}</span>
                             <span className="text-xs text-muted-foreground">{user?.email || 'user@email.com'}</span>
                         </div>
                     </div>
@@ -96,7 +105,15 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const auth = useAuth();
+  const firestore = useFirestore();
   const { user, isUserLoading } = useUser();
+
+  const userDocRef = useMemoFirebase(() => {
+      if (!firestore || !user) return null;
+      return doc(firestore, `users/${user.uid}`);
+  }, [firestore, user]);
+
+  const { data: userData } = useDoc(userDocRef);
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -140,10 +157,10 @@ export default function DashboardLayout({
           
           <div className="flex items-center gap-4 text-sm font-medium">
             <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1">
-                <span className='font-semibold text-primary'>1,250 تذكرة</span>
+                <span className='font-semibold text-primary'>{userData?.tickets ?? 0} تذكرة</span>
             </div>
              <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1">
-                <span className='font-semibold text-accent-foreground'>5,000 نقطة</span>
+                <span className='font-semibold text-accent-foreground'>{userData?.points ?? 0} نقطة</span>
             </div>
           </div>
           
