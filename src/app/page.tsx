@@ -38,7 +38,6 @@ const faqs = [
 ];
 
 export default function Home() {
-  const heroImage = PlaceHolderImages.find(p => p.id === 'hero');
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -65,22 +64,6 @@ export default function Home() {
                 </div>
             </div>
         </section>
-
-        {heroImage && (
-          <section className="container mx-auto px-4 -mt-16">
-            <div className="relative aspect-[16/9] md:aspect-[21/9] rounded-2xl overflow-hidden shadow-2xl">
-              <Image
-                src={heroImage.imageUrl}
-                alt={heroImage.description}
-                fill
-                className="object-cover"
-                data-ai-hint={heroImage.imageHint}
-                priority
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-primary/30 to-transparent"></div>
-            </div>
-          </section>
-        )}
 
         {/* Features Section */}
         <section id="features" className="py-20 md:py-32">
