@@ -14,11 +14,14 @@ import { Button } from "@/components/ui/button"
 import { MoreHorizontal, PlusCircle, Search, Loader } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import useSWR from 'swr';
+import axios from 'axios';
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function AdminUsersPage() {
     
-    const users: any[] = [];
-    const isLoading = true;
+    const { data: users, error, isLoading } = useSWR('/api/admin/users', fetcher);
 
     const getUserStatus = (lastLogin: string) => {
         if(!lastLogin) return 'غير نشط';
@@ -33,15 +36,15 @@ export default function AdminUsersPage() {
         <div className="flex items-center">
             <TabsList>
                 <TabsTrigger value="all">الكل</TabsTrigger>
-                <TabsTrigger value="active">نشط</TabsTrigger>
-                <TabsTrigger value="inactive">غير نشط</TabsTrigger>
+                <TabsTrigger value="active" disabled>نشط</TabsTrigger>
+                <TabsTrigger value="inactive" disabled>غير نشط</TabsTrigger>
             </TabsList>
             <div className="mr-auto flex items-center gap-2">
                 <div className="relative">
                     <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="بحث عن مستخدمين..." className="pr-8" />
+                    <Input placeholder="بحث عن مستخدمين..." className="pr-8" disabled />
                 </div>
-                <Button size="sm" className="gap-1">
+                <Button size="sm" className="gap-1" disabled>
                     <PlusCircle className="h-3.5 w-3.5" />
                     <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">إضافة مستخدم</span>
                 </Button>
@@ -73,17 +76,23 @@ export default function AdminUsersPage() {
                                         <Loader className="h-8 w-8 animate-spin mx-auto" />
                                     </TableCell>
                                 </TableRow>
-                            ) : users && users.length > 0 ? (
-                                users.map(user => (
-                                <TableRow key={user.id}>
-                                    <TableCell className="font-medium">{user.username}</TableCell>
-                                    <TableCell>{user.email}</TableCell>
-                                    <TableCell className="text-left">{user.tickets?.toLocaleString() || 0}</TableCell>
-                                    <TableCell className="text-left">{user.points?.toLocaleString() || 0}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getUserStatus(user.lastLogin) === 'غير نشط' ? 'destructive' : 'outline'}>{getUserStatus(user.lastLogin)}</Badge>
+                            ) : error || !users ? (
+                                <TableRow>
+                                     <TableCell colSpan={7} className="text-center h-48">
+                                        حدث خطأ أثناء جلب المستخدمين.
                                     </TableCell>
-                                    <TableCell>{user.lastLogin ? new Date(user.lastLogin).toLocaleDateString('ar-EG') : 'N/A'}</TableCell>
+                                </TableRow>
+                            ) : users.length > 0 ? (
+                                users.map((user: any) => (
+                                <TableRow key={user.PlayFabId}>
+                                    <TableCell className="font-medium">{user.DisplayName || 'N/A'}</TableCell>
+                                    <TableCell>{user.Email || 'N/A'}</TableCell>
+                                    <TableCell className="text-left">{user.VirtualCurrency?.TK?.toLocaleString() || 0}</TableCell>
+                                    <TableCell className="text-left">{user.VirtualCurrency?.PT?.toLocaleString() || 0}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={getUserStatus(user.LastLogin) === 'غير نشط' ? 'destructive' : 'outline'}>{getUserStatus(user.LastLogin)}</Badge>
+                                    </TableCell>
+                                    <TableCell>{user.LastLogin ? new Date(user.LastLogin).toLocaleDateString('ar-EG') : 'N/A'}</TableCell>
                                     <TableCell>
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
@@ -94,9 +103,9 @@ export default function AdminUsersPage() {
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuLabel>الإجراءات</DropdownMenuLabel>
-                                                <DropdownMenuItem>عرض الملف الشخصي</DropdownMenuItem>
-                                                <DropdownMenuItem>تعديل الأرصدة</DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive">حظر المستخدم</DropdownMenuItem>
+                                                <DropdownMenuItem disabled>عرض الملف الشخصي</DropdownMenuItem>
+                                                <DropdownMenuItem disabled>تعديل الأرصدة</DropdownMenuItem>
+                                                <DropdownMenuItem className="text-destructive" disabled>حظر المستخدم</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
