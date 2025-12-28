@@ -42,5 +42,9 @@ export const AddUserVirtualCurrency = promisify(PlayFabServer.AddUserVirtualCurr
 export const SubtractUserVirtualCurrency = promisify(PlayFabServer.SubtractUserVirtualCurrency);
 export const ExecuteCloudScript = promisify(PlayFabServer.ExecuteCloudScript);
 export const GetUsers = promisify(PlayFabServer.GetUsers);
+export const GetTitleData = promisify(PlayFabServer.GetTitleData);
+export const SetTitleData = promisify(PlayFabServer.SetTitleData);
+export const GetUserAccountInfo = promisify(PlayFabServer.GetUserAccountInfo);
+
 
 export { PlayFabServer, PlayFabClient };

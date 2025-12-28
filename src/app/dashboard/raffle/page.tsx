@@ -9,25 +9,44 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Users, Ticket, Loader } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
+import useSWR, { mutate } from 'swr';
+import axios from 'axios';
+
+const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 export default function RafflePage() {
     const prizeImage = PlaceHolderImages.find(p => p.id === 'raffle-prize');
     const { data: session } = useSession();
     const { toast } = useToast();
+    const { data: activeRaffle, error, isLoading } = useSWR('/api/raffle/current', fetcher);
+    
+    const [isEntering, setIsEntering] = useState(false);
 
-    // TODO: Re-implement logic
-    const isLoading = true;
-    const activeRaffle: any = null;
-    const participants: any[] = [];
-    const hasUserEntered = false;
-
+    const participants = activeRaffle?.participants ?? [];
+    const hasUserEntered = session && participants.some((p: any) => p.playfabId === session.user.id);
+    
     const handleEnterRaffle = async () => {
-         if (!session || !activeRaffle || hasUserEntered) return;
-         toast({
-            variant: 'destructive',
-            title: 'خطأ',
-            description: `قيد التطوير.`,
-        });
+         if (!session || !activeRaffle || hasUserEntered || isEntering) return;
+         
+         setIsEntering(true);
+         try {
+            await axios.post('/api/raffle/enter');
+            toast({
+                title: 'تم دخول السحب بنجاح!',
+                description: `لقد دخلت السحب. حظا موفقا!`,
+            });
+            // Re-fetch the raffle data to update the participant list
+            mutate('/api/raffle/current');
+         } catch(err: any) {
+            const errorMessage = err.response?.data?.error || 'حدث خطأ أثناء محاولة دخول السحب.';
+            toast({
+                variant: 'destructive',
+                title: 'خطأ',
+                description: errorMessage,
+            });
+         } finally {
+            setIsEntering(false);
+         }
     };
     
     if (isLoading) {
@@ -38,7 +57,7 @@ export default function RafflePage() {
         );
     }
     
-    if (!activeRaffle) {
+    if (error || !activeRaffle) {
         return (
              <div className="flex items-center justify-center h-96">
                 <Card>
@@ -54,6 +73,7 @@ export default function RafflePage() {
     }
 
     const raffleEndDate = new Date(activeRaffle.endDate);
+    const ticketCost = activeRaffle.ticketCost || 1; // Default to 1 if not defined
 
     return (
         <div className="grid gap-8 md:grid-cols-5">
@@ -86,10 +106,15 @@ export default function RafflePage() {
                             size="lg" 
                             className="w-full max-w-xs"
                             onClick={handleEnterRaffle}
-                            disabled={hasUserEntered || isLoading}
+                            disabled={hasUserEntered || isEntering || !session}
                         >
-                            {hasUserEntered ? 'لقد دخلت بالفعل' : `ادخل السحب (${activeRaffle.ticketCost} تذاكر)`}
-                            <Ticket className="mr-2 h-5 w-5" />
+                            {isEntering 
+                                ? <Loader className="h-5 w-5 animate-spin"/> 
+                                : hasUserEntered 
+                                    ? 'لقد دخلت بالفعل' 
+                                    : `ادخل السحب (${ticketCost} تذاكر)`
+                            }
+                            {!isEntering && <Ticket className="mr-2 h-5 w-5" />}
                         </Button>
                         {hasUserEntered && <p className="text-xs text-muted-foreground">حظا موفقا!</p>}
                     </CardFooter>
@@ -112,9 +137,9 @@ export default function RafflePage() {
                         ) : (
                         <div className="space-y-4 max-h-[450px] overflow-y-auto pr-2">
                             {participants && participants.length > 0 ? participants.map((p: any) => (
-                                <div key={p.id} className="flex items-center gap-4">
+                                <div key={p.playfabId} className="flex items-center gap-4">
                                     <Avatar>
-                                        <AvatarImage src={`https://picsum.photos/seed/${p.userId}/100/100`} />
+                                        <AvatarImage src={`https://picsum.photos/seed/${p.playfabId}/100/100`} />
                                         <AvatarFallback>{p.username?.substring(0,2) ?? '؟'}</AvatarFallback>
                                     </Avatar>
                                     <p className="font-medium">{p.username}</p>
