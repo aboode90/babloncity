@@ -2,15 +2,13 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Gamepad2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -21,8 +19,6 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -34,29 +30,27 @@ export default function LoginPage() {
     },
   });
 
-  useEffect(() => {
-    if (!isUserLoading && user) {
+  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+    const result = await signIn('credentials', {
+      redirect: false,
+      email: values.email,
+      password: values.password,
+    });
+
+    if (result?.error) {
+      toast({
+        variant: 'destructive',
+        title: 'فشل تسجيل الدخول',
+        description: 'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى المحاولة مرة أخرى.',
+      });
+    } else if (result?.ok) {
+      toast({
+        title: 'تم تسجيل الدخول بنجاح!',
+        description: 'سيتم توجيهك إلى لوحة التحكم.',
+      });
       router.push('/dashboard');
     }
-  }, [user, isUserLoading, router]);
-
-  const onSubmit = (values: z.infer<typeof loginSchema>) => {
-    initiateEmailSignIn(auth, values.email, values.password);
-    // The onAuthStateChanged listener in FirebaseProvider will handle the redirect.
-    // We can show a toast for feedback.
-    toast({
-      title: 'جاري تسجيل الدخول...',
-      description: 'سيتم توجيهك قريباً.',
-    });
   };
-
-  if (isUserLoading || user) {
-    return (
-        <div className="min-h-screen flex items-center justify-center">
-            <p>جاري التحميل...</p>
-        </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
@@ -107,7 +101,7 @@ export default function LoginPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
               <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-                تسجيل الدخول
+                {form.formState.isSubmitting ? 'جاري تسجيل الدخول...' : 'تسجيل الدخول'}
               </Button>
               <p className="text-sm text-center text-muted-foreground">
                 ليس لديك حساب؟{' '}

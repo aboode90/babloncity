@@ -2,18 +2,17 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useAuth, useUser, initiateEmailSignUp, setDocumentNonBlocking, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Gamepad2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { doc } from 'firebase/firestore';
+import axios from 'axios';
+import { signIn } from 'next-auth/react';
 
 const registerSchema = z.object({
   username: z.string().min(3, { message: 'يجب أن يكون اسم المستخدم 3 أحرف على الأقل.' }),
@@ -22,9 +21,6 @@ const registerSchema = z.object({
 });
 
 export default function RegisterPage() {
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const { user, isUserLoading } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -37,53 +33,38 @@ export default function RegisterPage() {
     },
   });
 
-  const {
-    formState: { isSubmitting },
-    getValues,
-  } = form;
+  const onSubmit = async (values: z.infer<typeof registerSchema>) => {
+    try {
+      // Step 1: Call the local API to register the user with PlayFab
+      await axios.post('/api/auth/register', values);
 
-  useEffect(() => {
-    if (!isUserLoading && user) {
-        // This effect runs when the user state changes.
-        // If the user has just been created and authenticated...
-        const values = getValues();
-        const userDocRef = doc(firestore, 'users', user.uid);
-        
-        // Create a user profile document in Firestore.
-        // Using set with merge prevents overwriting if it somehow already exists.
-        setDocumentNonBlocking(userDocRef, {
-            id: user.uid,
-            playFabId: '', // You can add this later if needed
-            email: user.email,
-            username: values.username,
-            joinDate: new Date().toISOString(),
-            lastLogin: new Date().toISOString(),
-            isAdmin: false,
-            tickets: 0,
-            points: 0,
-        }, { merge: true });
-        
+      // Step 2: Automatically sign the user in after successful registration
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: values.email,
+        password: values.password,
+      });
+
+      if (result?.ok) {
+        toast({
+          title: 'تم إنشاء الحساب بنجاح!',
+          description: 'أهلاً بك في بابلون بلوك. سيتم توجيهك الآن.',
+        });
         router.push('/dashboard');
+      } else {
+        throw new Error('فشل تسجيل الدخول بعد إنشاء الحساب.');
+      }
+    } catch (error: any) {
+      console.error(error);
+      const errorMessage = error.response?.data?.error || 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+      toast({
+        variant: 'destructive',
+        title: 'فشل إنشاء الحساب',
+        description: errorMessage,
+      });
     }
-}, [user, isUserLoading, router, firestore, getValues]);
-
-
-  const onSubmit = (values: z.infer<typeof registerSchema>) => {
-    initiateEmailSignUp(auth, values.email, values.password);
-    toast({
-      title: 'جاري إنشاء الحساب...',
-      description: 'سيتم تسجيل دخولك وتوجيهك قريباً.',
-    });
   };
   
-  if (isUserLoading || user) {
-    return (
-        <div className="min-h-screen flex items-center justify-center">
-            <p>جاري التحميل...</p>
-        </div>
-    );
-  }
-
   return (
     <div className="min-h-screen flex items-center justify-center p-4">
       <Card className="w-full max-w-md bg-glass shadow-2xl">
@@ -140,8 +121,8 @@ export default function RegisterPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button type="submit" className="w-full" disabled={isSubmitting}>
-                إنشاء حساب
+              <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? 'جاري إنشاء الحساب...' : 'إنشاء حساب'}
               </Button>
               <p className="text-sm text-center text-muted-foreground">
                 هل لديك حساب بالفعل؟{' '}
