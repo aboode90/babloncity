@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import React from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import React, { useEffect } from 'react';
 import {
   CircleUserRound,
   Gamepad2,
@@ -10,6 +10,7 @@ import {
   LogOut,
   Trophy,
   PanelLeft,
+  Loader,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +22,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuth, useUser } from '@/firebase';
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
@@ -49,6 +51,8 @@ function SidebarNav({ items }: { items: typeof navItems }) {
 }
 
 function SidebarContent() {
+    const { user } = useUser();
+
     return (
         <div className="flex h-full max-h-screen flex-col gap-2">
             <div className="flex h-[60px] items-center border-b px-6">
@@ -74,8 +78,8 @@ function SidebarContent() {
                             <CircleUserRound className="h-5 w-5"/>
                         </Button>
                         <div className="flex flex-col">
-                            <span className="text-sm font-medium">اسم المستخدم</span>
-                            <span className="text-xs text-muted-foreground">user@email.com</span>
+                            <span className="text-sm font-medium">{user?.displayName || 'اسم المستخدم'}</span>
+                            <span className="text-xs text-muted-foreground">{user?.email || 'user@email.com'}</span>
                         </div>
                     </div>
                 </Link>
@@ -90,6 +94,28 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, isUserLoading, router]);
+
+  const handleLogout = () => {
+    auth.signOut();
+  };
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+  
   const pageTitle = navItems.find(item => pathname.startsWith(item.href))?.label || 'لوحة التحكم';
   
   return (
@@ -134,7 +160,7 @@ export default function DashboardLayout({
                <Link href="/dashboard/profile"><DropdownMenuItem>الملف الشخصي</DropdownMenuItem></Link>
               <DropdownMenuItem>الإعدادات</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="ml-2 h-4 w-4" />
                 <span>تسجيل الخروج</span>
               </DropdownMenuItem>
