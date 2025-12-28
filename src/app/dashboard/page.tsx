@@ -1,17 +1,55 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Ticket, CircleDollarSign, Activity, Gift, Trophy } from "lucide-react";
+import { Ticket, CircleDollarSign, Activity, Gift, Trophy, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-
-const recentActivities = [
-    { type: 'wheel_spin', description: 'ربحت 50 تذكرة من عجلة الحظ', time: 'منذ ساعتين', icon: <Gift className="h-4 w-4 text-pink-500" /> },
-    { type: 'raffle_entry', description: 'دخلت السحب اليومي', time: 'منذ يوم', icon: <Trophy className="h-4 w-4 text-amber-500" /> },
-    { type: 'wheel_spin', description: 'ربحت 200 نقطة من عجلة الحظ', time: 'منذ يومين', icon: <Gift className="h-4 w-4 text-pink-500" /> },
-    { type: 'login', description: 'تم تسجيل الدخول بنجاح', time: 'منذ يومين', icon: <Activity className="h-4 w-4 text-green-500" /> },
-]
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from "@/firebase";
+import { collection, doc, limit, orderBy, query } from "firebase/firestore";
 
 export default function DashboardPage() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, `users/${user.uid}`);
+    }, [user, firestore]);
+
+    const transactionsQuery = useMemoFirebase(() => {
+        if(!user || !firestore) return null;
+        return query(collection(firestore, `users/${user.uid}/transactions`), orderBy('transactionDate', 'desc'), limit(5));
+    }, [user, firestore]);
+
+    const { data: userData, isLoading: isUserLoading } = useDoc(userDocRef);
+    const { data: transactions, isLoading: areTransactionsLoading } = useCollection(transactionsQuery);
+
+    const getTransactionIcon = (description: string) => {
+        if (description.includes('عجلة الحظ')) return <Gift className="h-4 w-4 text-pink-500" />;
+        if (description.includes('السحب')) return <Trophy className="h-4 w-4 text-amber-500" />;
+        if (description.includes('تسجيل')) return <Activity className="h-4 w-4 text-green-500" />;
+        return <Activity className="h-4 w-4 text-muted-foreground" />;
+    };
+
+    const formatTimeAgo = (isoDate: string) => {
+        const date = new Date(isoDate);
+        const now = new Date();
+        const seconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+        let interval = seconds / 31536000;
+        if (interval > 1) return `منذ ${Math.floor(interval)} سنوات`;
+        interval = seconds / 2592000;
+        if (interval > 1) return `منذ ${Math.floor(interval)} أشهر`;
+        interval = seconds / 86400;
+        if (interval > 1) return `منذ ${Math.floor(interval)} أيام`;
+        interval = seconds / 3600;
+        if (interval > 1) return `منذ ${Math.floor(interval)} ساعات`;
+        interval = seconds / 60;
+        if (interval > 1) return `منذ ${Math.floor(interval)} دقائق`;
+        return `منذ ${Math.floor(seconds)} ثواني`;
+    }
+
     return (
         <div className="grid gap-4 md:gap-8">
             <div className="grid gap-4 md:grid-cols-2">
@@ -21,7 +59,11 @@ export default function DashboardPage() {
                         <Ticket className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-4xl font-bold text-primary">1,250 تذكرة</div>
+                        {isUserLoading ? (
+                            <Loader className="h-8 w-8 animate-spin" />
+                        ) : (
+                            <div className="text-4xl font-bold text-primary">{userData?.tickets ?? 0} تذكرة</div>
+                        )}
                         <p className="text-xs text-muted-foreground">استخدمها لتدوير العجلة أو دخول السحوبات!</p>
                     </CardContent>
                 </Card>
@@ -31,7 +73,11 @@ export default function DashboardPage() {
                         <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-4xl font-bold">5,000 نقطة</div>
+                        {isUserLoading ? (
+                           <Loader className="h-8 w-8 animate-spin" />
+                        ) : (
+                            <div className="text-4xl font-bold">{userData?.points ?? 0} نقطة</div>
+                        )}
                         <p className="text-xs text-muted-foreground">تصدر لوحة المتصدرين واظهر نتيجتك.</p>
                     </CardContent>
                 </Card>
@@ -44,6 +90,11 @@ export default function DashboardPage() {
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
+                        {areTransactionsLoading ? (
+                             <div className="flex justify-center items-center h-40">
+                                <Loader className="h-8 w-8 animate-spin text-primary" />
+                             </div>
+                        ) : (
                          <Table>
                             <TableHeader>
                                 <TableRow>
@@ -52,19 +103,24 @@ export default function DashboardPage() {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {recentActivities.map((activity, i) => (
-                                    <TableRow key={i}>
+                                {transactions && transactions.length > 0 ? transactions.map((activity) => (
+                                    <TableRow key={activity.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                {activity.icon}
+                                                {getTransactionIcon(activity.description)}
                                                 <span className="font-medium">{activity.description}</span>
                                             </div>
                                         </TableCell>
-                                        <TableCell className="text-left text-muted-foreground">{activity.time}</TableCell>
+                                        <TableCell className="text-left text-muted-foreground">{formatTimeAgo(activity.transactionDate)}</TableCell>
                                     </TableRow>
-                                ))}
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={2} className="text-center">لا يوجد نشاط لعرضه.</TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
+                        )}
                     </CardContent>
                 </Card>
                 <Card className="lg:col-span-3">

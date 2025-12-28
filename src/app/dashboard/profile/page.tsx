@@ -3,19 +3,12 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { CircleUserRound, Edit } from 'lucide-react';
+import { CircleUserRound, Edit, Loader } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { doc } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, doc, limit, orderBy, query } from 'firebase/firestore';
 import { useEffect, useState } from 'react';
-
-const transactions = [
-    { date: '2024-07-21', description: 'ربح 50 تذكرة من عجلة الحظ', amount: '+50 TK', type: 'Credit' },
-    { date: '2024-07-21', description: 'تدوير عجلة الحظ', amount: '-1 TK', type: 'Debit' },
-    { date: '2024-07-20', description: 'دخول السحب اليومي', amount: '-5 TK', type: 'Debit' },
-    { date: '2024-07-19', description: 'مكافأة لعبة', amount: '+100 PT', type: 'Credit' },
-];
 
 export default function ProfilePage() {
     const avatar = PlaceHolderImages.find(p => p.id === 'avatar1');
@@ -29,7 +22,13 @@ export default function ProfilePage() {
         return doc(firestore, `users/${user.uid}`);
     }, [firestore, user]);
 
+    const transactionsQuery = useMemoFirebase(() => {
+        if(!user || !firestore) return null;
+        return query(collection(firestore, `users/${user.uid}/transactions`), orderBy('transactionDate', 'desc'), limit(20));
+    }, [user, firestore]);
+
     const { data: userData } = useDoc(userDocRef);
+    const { data: transactions, isLoading: areTransactionsLoading } = useCollection(transactionsQuery);
 
     useEffect(() => {
         if (userData?.joinDate) {
@@ -92,6 +91,11 @@ export default function ProfilePage() {
                     <CardDescription>نشاط حسابك الأخير.</CardDescription>
                 </CardHeader>
                 <CardContent>
+                    {areTransactionsLoading ? (
+                        <div className="flex justify-center items-center h-40">
+                            <Loader className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                    ) : (
                     <Table>
                         <TableHeader>
                             <TableRow>
@@ -101,17 +105,25 @@ export default function ProfilePage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {transactions.map((tx, index) => (
-                                <TableRow key={index}>
-                                    <TableCell className="text-muted-foreground">{tx.date}</TableCell>
+                            {transactions && transactions.length > 0 ? transactions.map((tx) => (
+                                <TableRow key={tx.id}>
+                                    <TableCell className="text-muted-foreground">
+                                        {new Date(tx.transactionDate).toLocaleString('ar-EG', {day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'})}
+                                    </TableCell>
                                     <TableCell className="font-medium">{tx.description}</TableCell>
-                                    <TableCell className={`text-left font-semibold ${tx.type === 'Credit' ? 'text-green-500' : 'text-red-500'}`}>
-                                        {tx.amount}
+                                    <TableCell className={`text-left font-semibold ${tx.amount > 0 ? 'text-green-500' : 'text-red-500'}`}>
+                                       {tx.amount > 0 ? '+' : ''}
+                                       {tx.amount} {tx.currencyType === 'Tickets' ? 'تذكرة' : 'نقطة'}
                                     </TableCell>
                                 </TableRow>
-                            ))}
+                            )) : (
+                                <TableRow>
+                                    <TableCell colSpan={3} className="text-center">لا توجد معاملات لعرضها.</TableCell>
+                                </TableRow>
+                            )}
                         </TableBody>
                     </Table>
+                    )}
                 </CardContent>
             </Card>
         </div>

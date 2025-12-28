@@ -1,12 +1,26 @@
+'use client';
+
 import { LuckyWheel } from "@/components/lucky-wheel";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Gift, Ticket } from "lucide-react";
+import { useDoc, useFirestore, useUser, useMemoFirebase } from "@/firebase";
+import { Gift, Loader } from "lucide-react";
+import { doc } from 'firebase/firestore';
 
 const prizes = [
   "100 تذكرة", "50 نقطة", "5 تذاكر", "حاول مرة أخرى", "200 نقطة", "10 تذاكر", "50 تذكرة", "20 نقطة"
 ];
 
 export default function LuckyWheelPage() {
+    const { user } = useUser();
+    const firestore = useFirestore();
+
+    const userDocRef = useMemoFirebase(() => {
+        if (!user || !firestore) return null;
+        return doc(firestore, `users/${user.uid}`);
+    }, [user, firestore]);
+
+    const { data: userData, isLoading: isUserLoading } = useDoc(userDocRef);
+
     return (
         <div className="container mx-auto py-8">
             <Card className="bg-glass shadow-xl">
@@ -15,7 +29,13 @@ export default function LuckyWheelPage() {
                     <CardDescription>اختبر حظك! كل دورة تكلف تذكرة واحدة.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col items-center gap-8">
-                    <LuckyWheel />
+                    {isUserLoading ? (
+                        <div className="flex justify-center items-center h-[300px] md:h-[450px]">
+                            <Loader className="h-12 w-12 animate-spin text-primary" />
+                        </div>
+                    ) : (
+                        <LuckyWheel user={user} userData={userData} />
+                    )}
                     <div className="text-center">
                         <h3 className="text-lg font-semibold flex items-center justify-center gap-2">
                             <Gift className="h-5 w-5 text-primary" />

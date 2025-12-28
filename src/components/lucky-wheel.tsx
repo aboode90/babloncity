@@ -2,36 +2,109 @@
 
 import { useState } from "react";
 import { Button } from "./ui/button";
+import { useFirestore, updateDocumentNonBlocking, addDocumentNonBlocking, useMemoFirebase } from "@/firebase";
+import { useToast } from "@/hooks/use-toast";
+import { doc, collection } from "firebase/firestore";
+import type { User } from "firebase/auth";
 
+// Define the prize structure with types and amounts
 const prizes = [
-  { name: "100 تذكرة", color: "#A020F0" },
-  { name: "50 نقطة", color: "#FF00FF" },
-  { name: "5 تذاكر", color: "#DA70D6" },
-  { name: "حاول مرة أخرى", color: "#E6E6FA" },
-  { name: "200 نقطة", color: "#A020F0" },
-  { name: "10 تذاكر", color: "#FF00FF" },
-  { name: "50 تذكرة", color: "#DA70D6" },
-  { name: "20 نقطة", color: "#E6E6FA" },
+  { name: "100 تذكرة", type: "Tickets", amount: 100, color: "#A020F0" },
+  { name: "50 نقطة", type: "Points", amount: 50, color: "#FF00FF" },
+  { name: "5 تذاكر", type: "Tickets", amount: 5, color: "#DA70D6" },
+  { name: "حاول مرة أخرى", type: "Nothing", amount: 0, color: "#E6E6FA" },
+  { name: "200 نقطة", type: "Points", amount: 200, color: "#A020F0" },
+  { name: "10 تذاكر", type: "Tickets", amount: 10, color: "#FF00FF" },
+  { name: "50 تذكرة", type: "Tickets", amount: 50, color: "#DA70D6" },
+  { name: "20 نقطة", type: "Points", amount: 20, color: "#E6E6FA" },
 ];
 
 const SEGMENTS = prizes.length;
 const SEGMENT_ANGLE = 360 / SEGMENTS;
+const SPIN_COST = 1;
 
-export function LuckyWheel() {
+interface LuckyWheelProps {
+    user: User | null;
+    userData: any;
+}
+
+export function LuckyWheel({ user, userData }: LuckyWheelProps) {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
+  const firestore = useFirestore();
+  const { toast } = useToast();
 
   const spin = () => {
-    if (spinning) return;
+    if (spinning || !user || !firestore || !userData) return;
+    
+    if (userData.tickets < SPIN_COST) {
+        toast({
+            variant: "destructive",
+            title: "رصيد غير كافٍ",
+            description: `أنت بحاجة إلى ${SPIN_COST} تذكرة على الأقل لتدوير العجلة.`,
+        });
+        return;
+    }
 
     setSpinning(true);
-    const newRotation = rotation + 360 * 5 + Math.random() * 360;
+
+    const userDocRef = doc(firestore, `users/${user.uid}`);
+    const transactionsColRef = collection(firestore, `users/${user.uid}/transactions`);
+    
+    // 1. Deduct spin cost
+    updateDocumentNonBlocking(userDocRef, { tickets: userData.tickets - SPIN_COST });
+    addDocumentNonBlocking(transactionsColRef, {
+        userId: user.uid,
+        transactionDate: new Date().toISOString(),
+        currencyType: 'Tickets',
+        amount: -SPIN_COST,
+        description: 'تدوير عجلة الحظ'
+    });
+
+    const spinNumber = Math.random();
+    const prizeIndex = Math.floor(spinNumber * SEGMENTS);
+    const prize = prizes[prizeIndex];
+
+    // Calculate rotation for the animation
+    const randomOffset = (Math.random() - 0.5) * SEGMENT_ANGLE * 0.8;
+    const prizeAngle = prizeIndex * SEGMENT_ANGLE + SEGMENT_ANGLE / 2;
+    const finalAngle = 360 - prizeAngle + randomOffset;
+    const newRotation = rotation + 360 * 5 + finalAngle;
+    
     setRotation(newRotation);
 
     setTimeout(() => {
       setSpinning(false);
-      // In a real app, you would determine the prize based on final rotation
-      // and show a modal.
+      
+      toast({
+        title: "تهانينا!",
+        description: prize.type === 'Nothing' ? "حظاً أوفر في المرة القادمة!" : `لقد فزت بـ ${prize.name}!`,
+      });
+
+      // 2. Add prize if won
+      if (prize.type !== 'Nothing') {
+          const newBalance = (prize.type === 'Tickets' ? userData.tickets - SPIN_COST : userData.tickets) + (prize.type === 'Tickets' ? prize.amount : 0);
+          
+          const updatePayload: { [key: string]: any } = {};
+          let prizeDescription = '';
+          if (prize.type === 'Tickets') {
+              updatePayload.tickets = userData.tickets - SPIN_COST + prize.amount;
+              prizeDescription = `ربح ${prize.amount} تذكرة من عجلة الحظ`;
+          } else if (prize.type === 'Points') {
+              updatePayload.points = userData.points + prize.amount;
+              prizeDescription = `ربح ${prize.amount} نقطة من عجلة الحظ`;
+          }
+
+          updateDocumentNonBlocking(userDocRef, updatePayload);
+          addDocumentNonBlocking(transactionsColRef, {
+              userId: user.uid,
+              transactionDate: new Date().toISOString(),
+              currencyType: prize.type,
+              amount: prize.amount,
+              description: prizeDescription
+          });
+      }
+
     }, 5000);
   };
 
@@ -96,7 +169,7 @@ export function LuckyWheel() {
         <Button
           size="lg"
           onClick={spin}
-          disabled={spinning}
+          disabled={spinning || !user || !userData}
           className="h-20 w-20 md:h-28 md:w-28 rounded-full text-lg md:text-xl font-bold font-headline shadow-2xl"
         >
           {spinning ? "..." : "أدر"}
