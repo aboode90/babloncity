@@ -1,17 +1,11 @@
+'use client';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Activity, Ticket, CircleDollarSign, BarChart3, Trophy, Gift } from "lucide-react";
+import { Users, Activity, Ticket, CircleDollarSign, BarChart3, Trophy, Gift, Loader } from "lucide-react";
 import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartConfig } from "@/components/ui/chart"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer } from "recharts"
-
-const chartData = [
-  { date: "2024-07-01", users: 20 },
-  { date: "2024-07-02", users: 35 },
-  { date: "2024-07-03", users: 50 },
-  { date: "2024-07-04", users: 45 },
-  { date: "2024-07-05", users: 60 },
-  { date: "2024-07-06", users: 80 },
-  { date: "2024-07-07", users: 95 },
-];
+import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { collection, query, orderBy, limit } from "firebase/firestore";
+import { useMemo } from "react";
 
 const chartConfig = {
   users: {
@@ -21,6 +15,57 @@ const chartConfig = {
 } satisfies ChartConfig
 
 export default function AdminDashboardPage() {
+    const firestore = useFirestore();
+
+    const usersQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'users'), orderBy('joinDate', 'desc'));
+    }, [firestore]);
+
+    const rafflesQuery = useMemoFirebase(() => {
+        if (!firestore) return null;
+        return query(collection(firestore, 'raffles'), orderBy('startDate', 'desc'), limit(1));
+    }, [firestore]);
+
+    const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
+    const { data: raffles, isLoading: rafflesLoading } = useCollection(rafflesQuery);
+    const activeRaffle = raffles?.[0];
+
+    const raffleEntriesQuery = useMemoFirebase(() => {
+        if (!firestore || !activeRaffle) return null;
+        return query(collection(firestore, `raffles/${activeRaffle.id}/raffleEntries`), orderBy('entryDate', 'desc'), limit(3));
+    }, [firestore, activeRaffle]);
+
+    const { data: recentEntries, isLoading: entriesLoading } = useCollection(raffleEntriesQuery);
+    
+    const stats = useMemo(() => {
+        if (!users) return { totalUsers: 0, totalTickets: 0, totalPoints: 0, newUsersThisWeek: [] };
+
+        const totalTickets = users.reduce((acc, user) => acc + (user.tickets || 0), 0);
+        const totalPoints = users.reduce((acc, user) => acc + (user.points || 0), 0);
+
+        const today = new Date();
+        const pastWeek = new Array(7).fill(0).map((_, i) => {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            return d.toISOString().split('T')[0];
+        }).reverse();
+
+        const newUsersByDay = pastWeek.map(dateStr => {
+            const count = users.filter(user => user.joinDate?.startsWith(dateStr)).length;
+            return { date: dateStr, users: count };
+        });
+
+        return {
+            totalUsers: users.length,
+            totalTickets,
+            totalPoints,
+            newUsersThisWeek: newUsersByDay
+        };
+    }, [users]);
+    
+    const isLoading = usersLoading || rafflesLoading || entriesLoading;
+
   return (
     <div className="grid gap-4 md:gap-8">
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -30,18 +75,18 @@ export default function AdminDashboardPage() {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">10,234</div>
-            <p className="text-xs text-muted-foreground">+5.2% عن الشهر الماضي</p>
+             {usersLoading ? <Loader className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold">{stats.totalUsers}</div>}
+             <p className="text-xs text-muted-foreground">إجمالي المستخدمين المسجلين</p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">المستخدمون النشطون (24 ساعة)</CardTitle>
+            <CardTitle className="text-sm font-medium">المستخدمون النشطون</CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">1,432</div>
-            <p className="text-xs text-muted-foreground">+12.1% عن الأمس</p>
+            {usersLoading ? <Loader className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold">{stats.totalUsers}</div>}
+            <p className="text-xs text-muted-foreground">(قيد التطوير)</p>
           </CardContent>
         </Card>
         <Card>
@@ -50,7 +95,7 @@ export default function AdminDashboardPage() {
             <Ticket className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">5,231,890</div>
+             {usersLoading ? <Loader className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold">{stats.totalTickets.toLocaleString()}</div>}
             <p className="text-xs text-muted-foreground">قيد التداول</p>
           </CardContent>
         </Card>
@@ -60,7 +105,7 @@ export default function AdminDashboardPage() {
             <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12,453,200</div>
+            {usersLoading ? <Loader className="h-6 w-6 animate-spin"/> : <div className="text-2xl font-bold">{stats.totalPoints.toLocaleString()}</div>}
             <p className="text-xs text-muted-foreground">قيد التداول</p>
           </CardContent>
         </Card>
@@ -75,9 +120,10 @@ export default function AdminDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                {usersLoading ? <div className="h-[250px] w-full flex items-center justify-center"><Loader className="h-8 w-8 animate-spin"/></div> : (
                 <ChartContainer config={chartConfig} className="h-[250px] w-full" dir="ltr">
                   <ResponsiveContainer>
-                      <BarChart data={chartData}>
+                      <BarChart data={stats.newUsersThisWeek}>
                           <CartesianGrid vertical={false} />
                           <XAxis dataKey="date" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => new Date(value).toLocaleDateString('ar-EG', { day: 'numeric', month: 'short' })} />
                           <YAxis />
@@ -86,6 +132,7 @@ export default function AdminDashboardPage() {
                       </BarChart>
                   </ResponsiveContainer>
                 </ChartContainer>
+                )}
               </CardContent>
           </Card>
           <Card>
@@ -96,29 +143,28 @@ export default function AdminDashboardPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
+                 {isLoading ? <div className="h-40 flex items-center justify-center"><Loader className="h-8 w-8 animate-spin"/></div> : (
                 <div className="space-y-4">
-                    <div className="flex items-center">
-                        <Users className="h-4 w-4 ml-2 text-primary"/>
-                        <div>
-                            <p className="text-sm font-medium">مستخدم جديد 'Player123' سجل.</p>
-                            <p className="text-xs text-muted-foreground">قبل دقيقتين</p>
+                    {users?.slice(0, 1).map(user => (
+                        <div key={user.id} className="flex items-center">
+                            <Users className="h-4 w-4 ml-2 text-primary"/>
+                            <div>
+                                <p className="text-sm font-medium">مستخدم جديد '{user.username}' سجل.</p>
+                                <p className="text-xs text-muted-foreground">{new Date(user.joinDate).toLocaleString('ar-EG')}</p>
+                            </div>
                         </div>
-                    </div>
-                     <div className="flex items-center">
-                        <Trophy className="h-4 w-4 ml-2 text-amber-500"/>
-                        <div>
-                            <p className="text-sm font-medium">'WinnerGuy' فاز بالسحب اليومي.</p>
-                            <p className="text-xs text-muted-foreground">قبل ساعة</p>
+                    ))}
+                     {recentEntries?.slice(0, 2).map(entry => (
+                         <div key={entry.id} className="flex items-center">
+                            <Trophy className="h-4 w-4 ml-2 text-amber-500"/>
+                            <div>
+                                <p className="text-sm font-medium">'{entry.username}' دخل السحب اليومي.</p>
+                                <p className="text-xs text-muted-foreground">{new Date(entry.entryDate).toLocaleString('ar-EG')}</p>
+                            </div>
                         </div>
-                    </div>
-                     <div className="flex items-center">
-                        <Gift className="h-4 w-4 ml-2 text-pink-500"/>
-                        <div>
-                            <p className="text-sm font-medium">'Spinner' فاز بـ 100 تذكرة على عجلة الحظ.</p>
-                            <p className="text-xs text-muted-foreground">قبل 3 ساعات</p>
-                        </div>
-                    </div>
+                     ))}
                 </div>
+                 )}
               </CardContent>
           </Card>
       </div>
