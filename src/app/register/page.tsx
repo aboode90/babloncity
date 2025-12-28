@@ -56,7 +56,7 @@ export default function RegisterPage() {
       }
     } catch (error: any) {
       console.error(error);
-      const errorMessage = error.response?.data?.error || 'حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى.';
+      const errorMessage = error.response?.data?.error || 'حدث خطأ غير متوقع. يرى المحاولة مرة أخرى.';
       toast({
         variant: 'destructive',
         title: 'فشل إنشاء الحساب',
