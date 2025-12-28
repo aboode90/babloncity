@@ -1,0 +1,314 @@
+{
+  "entities": {
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user within the Babylon Block Portal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the user."
+        },
+        "playFabId": {
+          "type": "string",
+          "description": "The PlayFab ID associated with this user. This is the primary key for user data in PlayFab."
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user.",
+          "format": "email"
+        },
+        "username": {
+          "type": "string",
+          "description": "Username of the user."
+        },
+        "joinDate": {
+          "type": "string",
+          "description": "Date and time when the user joined the platform.",
+          "format": "date-time"
+        },
+        "lastLogin": {
+          "type": "string",
+          "description": "Date and time of the user's last login.",
+          "format": "date-time"
+        },
+        "isAdmin": {
+          "type": "boolean",
+          "description": "Indicates if the user is an administrator."
+        }
+      },
+      "required": [
+        "id",
+        "playFabId",
+        "email",
+        "username",
+        "joinDate"
+      ]
+    },
+    "LuckyWheelSpin": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "LuckyWheelSpin",
+      "type": "object",
+      "description": "Represents a single spin of the Lucky Wheel by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the lucky wheel spin."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N LuckyWheelSpin)"
+        },
+        "spinDate": {
+          "type": "string",
+          "description": "Date and time when the spin occurred.",
+          "format": "date-time"
+        },
+        "prizeType": {
+          "type": "string",
+          "description": "The type of prize won (e.g., 'Tickets', 'Points', 'Nothing')."
+        },
+        "prizeAmount": {
+          "type": "number",
+          "description": "The amount of the prize won."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "spinDate",
+        "prizeType",
+        "prizeAmount"
+      ]
+    },
+    "RaffleEntry": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "RaffleEntry",
+      "type": "object",
+      "description": "Represents a user's entry into a daily raffle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the raffle entry."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N RaffleEntry)"
+        },
+        "raffleId": {
+          "type": "string",
+          "description": "Reference to Raffle. (Relationship: Raffle 1:N RaffleEntry)"
+        },
+        "entryDate": {
+          "type": "string",
+          "description": "Date and time when the user entered the raffle.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "raffleId",
+        "entryDate"
+      ]
+    },
+    "Raffle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Raffle",
+      "type": "object",
+      "description": "Represents a daily raffle event.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the raffle event."
+        },
+        "startDate": {
+          "type": "string",
+          "description": "Date and time when the raffle starts.",
+          "format": "date-time"
+        },
+        "endDate": {
+          "type": "string",
+          "description": "Date and time when the raffle ends.",
+          "format": "date-time"
+        },
+        "prizeType": {
+          "type": "string",
+          "description": "The type of prize offered in the raffle (e.g., 'Tickets', 'Points')."
+        },
+        "prizeAmount": {
+          "type": "number",
+          "description": "The amount of the prize offered."
+        }
+      },
+      "required": [
+        "id",
+        "startDate",
+        "endDate",
+        "prizeType",
+        "prizeAmount"
+      ]
+    },
+    "Transaction": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Transaction",
+      "type": "object",
+      "description": "Represents a transaction of virtual currency (Tickets or Points) by a user.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the transaction."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to User. (Relationship: User 1:N Transaction)"
+        },
+        "transactionDate": {
+          "type": "string",
+          "description": "Date and time when the transaction occurred.",
+          "format": "date-time"
+        },
+        "currencyType": {
+          "type": "string",
+          "description": "The type of currency involved in the transaction ('Tickets' or 'Points')."
+        },
+        "amount": {
+          "type": "number",
+          "description": "The amount of currency transferred in the transaction (can be positive or negative)."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the transaction (e.g., 'Lucky Wheel Spin', 'Raffle Entry', 'Admin Adjustment')."
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "transactionDate",
+        "currencyType",
+        "amount",
+        "description"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user profile information. Secured by path-based ownership (`request.auth.uid == userId`).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Indicates admin status. Existence of a document grants admin privileges. Secured by requiring admin privileges to create/delete.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the admin user."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/luckyWheelSpins/{spinId}",
+        "definition": {
+          "entityName": "LuckyWheelSpin",
+          "schema": {
+            "$ref": "#/backend/entities/LuckyWheelSpin"
+          },
+          "description": "Stores lucky wheel spin data for each user. Secured by path-based ownership (`request.auth.uid == userId`).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "spinId",
+              "description": "The unique identifier for the lucky wheel spin."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/raffles/{raffleId}",
+        "definition": {
+          "entityName": "Raffle",
+          "schema": {
+            "$ref": "#/backend/entities/Raffle"
+          },
+          "description": "Stores information about each raffle event. Accessible to all users for read, but restricted to admins for create/update/delete.",
+          "params": [
+            {
+              "name": "raffleId",
+              "description": "The unique identifier for the raffle event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/raffles/{raffleId}/raffleEntries/{entryId}",
+        "definition": {
+          "entityName": "RaffleEntry",
+          "schema": {
+            "$ref": "#/backend/entities/RaffleEntry"
+          },
+          "description": "Stores individual raffle entries. Includes denormalized 'userId' for authorization independence.  Users can only create entries for themselves (`request.auth.uid == resource.data.userId`).",
+          "params": [
+            {
+              "name": "raffleId",
+              "description": "The unique identifier for the raffle event."
+            },
+            {
+              "name": "entryId",
+              "description": "The unique identifier for the raffle entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}/transactions/{transactionId}",
+        "definition": {
+          "entityName": "Transaction",
+          "schema": {
+            "$ref": "#/backend/entities/Transaction"
+          },
+          "description": "Stores transaction history for each user. Secured by path-based ownership (`request.auth.uid == userId`).",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The unique identifier for the user."
+            },
+            {
+              "name": "transactionId",
+              "description": "The unique identifier for the transaction."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the features of the Babylon Block Portal, emphasizing security, scalability, and ease of querying. The design prioritizes Authorization Independence by denormalizing relevant authorization data, avoiding hierarchical `get()` calls in security rules. It leverages Structural Segregation to ensure collections contain documents with homogeneous security postures and employs Access Modeling to standardize authorization patterns.\n\n*   **Users:** User data is stored in a `users` collection, secured using path-based ownership. Admin status is managed via a separate `roles_admin` collection, promoting clear and efficient security rules.\n*   **Lucky Wheel Spins:** Lucky wheel spin data is stored in subcollections under each user, ensuring data isolation and ownership. This adheres to the 1:N relationship and is secured using path-based rules.\n*   **Raffle and Raffle Entries:** Raffle data is stored in a top-level `raffles` collection. Raffle entries are stored as a subcollection under each raffle, with denormalized `userId` and `userProfile` to ensure each entry's author can be validated directly. The current active raffle is stored in a separate `active_raffles` collection to optimize reads for displaying raffle information.\n*   **Transactions:** Transaction data is stored in subcollections under each user, secured using path-based ownership. This allows efficient querying of a user's transaction history.\n\nThis structure enables secure `list` operations (QAPs) by segregating data based on ownership and access requirements. It avoids using rules as filters by ensuring that each collection inherently contains data that satisfies its security constraints."
+  }
+}
