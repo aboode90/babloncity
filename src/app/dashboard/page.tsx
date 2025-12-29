@@ -2,25 +2,24 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Ticket, CircleDollarSign, Activity, Gift, Trophy, Loader } from "lucide-react";
+import { Ticket, Activity, Gift, Trophy, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
-import { useEffect, useState } from "react";
-import axios from 'axios';
 import useSWR from 'swr';
+import axios from 'axios';
 
-
-const fetcher = (url: string) => axios.get(url).then(res => res.data);
+const fetcher = (url: string) => axios.get(url, { 
+    headers: { 'Cache-Control': 'no-cache' }
+}).then(res => res.data);
 
 export default function DashboardPage() {
     const { data: session, status } = useSession();
     
-    const { data: userData, isLoading: isBalanceLoading } = useSWR(session ? '/api/user/account' : null, fetcher);
+    const { data: userData, isLoading: isBalanceLoading } = useSWR(session ? '/api/user/account' : null, fetcher, { revalidateOnFocus: true, revalidateOnReconnect: true });
     const { data: transactions, isLoading: isTransactionsLoading } = useSWR(session ? '/api/user/transactions' : null, fetcher);
     
     const isLoading = status === 'loading' || isBalanceLoading || isTransactionsLoading;
-
 
     const getTransactionIcon = (description: string) => {
         if (description.includes('عجلة الحظ')) return <Gift className="h-4 w-4 text-pink-500" />;
@@ -50,8 +49,8 @@ export default function DashboardPage() {
 
     return (
         <div className="grid gap-4 md:gap-8">
-            <div className="grid gap-4 md:grid-cols-2">
-                <Card>
+            <div className="grid gap-4 md:grid-cols-1">
+                <Card className="w-full md:w-3/4 lg:w-1/2 mx-auto">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">تذاكرك</CardTitle>
                         <Ticket className="h-4 w-4 text-muted-foreground" />
@@ -63,20 +62,6 @@ export default function DashboardPage() {
                             <div className="text-4xl font-bold text-primary">{userData?.VirtualCurrency?.TK?.toLocaleString() ?? 0} تذكرة</div>
                         )}
                         <p className="text-xs text-muted-foreground">استخدمها لتدوير العجلة أو دخول السحوبات!</p>
-                    </CardContent>
-                </Card>
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">نقاطك</CardTitle>
-                        <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                           <Loader className="h-8 w-8 animate-spin" />
-                        ) : (
-                            <div className="text-4xl font-bold">{userData?.points?.toLocaleString() ?? 0} نقطة</div>
-                        )}
-                        <p className="text-xs text-muted-foreground">تصدر لوحة المتصدرين واظهر نتيجتك.</p>
                     </CardContent>
                 </Card>
             </div>
