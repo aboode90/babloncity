@@ -1,10 +1,9 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Ticket, Activity, Gift, Trophy, Loader } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Ticket, Activity, Gift, Loader } from "lucide-react";
 import { useSession } from "next-auth/react";
 import useSWR from 'swr';
 import axios from 'axios';
@@ -22,9 +21,8 @@ export default function DashboardPage() {
     const isLoading = status === 'loading' || isBalanceLoading || isTransactionsLoading;
 
     const getTransactionIcon = (description: string) => {
-        if (description.includes('عجلة الحظ')) return <Gift className="h-4 w-4 text-pink-500" />;
-        if (description.includes('السحب')) return <Trophy className="h-4 w-4 text-amber-500" />;
         if (description.includes('تسجيل')) return <Activity className="h-4 w-4 text-green-500" />;
+        if (description.includes('مكافأة')) return <Gift className="h-4 w-4 text-amber-500" />;
         return <Activity className="h-4 w-4 text-muted-foreground" />;
     };
 
@@ -61,12 +59,12 @@ export default function DashboardPage() {
                         ) : (
                             <div className="text-4xl font-bold text-primary">{userData?.VirtualCurrency?.TK?.toLocaleString() ?? 0} تذكرة</div>
                         )}
-                        <p className="text-xs text-muted-foreground">استخدمها لتدوير العجلة أو دخول السحوبات!</p>
+                        <p className="text-xs text-muted-foreground">اربح المزيد من خلال إكمال المهام!</p>
                     </CardContent>
                 </Card>
             </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-                <Card className="lg:col-span-4">
+            <div className="grid gap-4 md:grid-cols-1">
+                <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
                           <Activity className="h-5 w-5" /> النشاط الأخير
@@ -104,26 +102,6 @@ export default function DashboardPage() {
                             </TableBody>
                         </Table>
                         )}
-                    </CardContent>
-                </Card>
-                <Card className="lg:col-span-3">
-                    <CardHeader>
-                        <CardTitle>إجراءات سريعة</CardTitle>
-                        <CardDescription>ماذا تود أن تفعل بعد ذلك؟</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid gap-4">
-                        <Link href="/dashboard/lucky-wheel">
-                            <Button className="w-full" size="lg">
-                                <Gift className="ml-2 h-5 w-5" />
-                                أدر عجلة الحظ
-                            </Button>
-                        </Link>
-                        <Link href="/dashboard/raffle">
-                            <Button className="w-full" size="lg" variant="secondary">
-                                <Trophy className="ml-2 h-5 w-5" />
-                                ادخل السحب اليومي
-                            </Button>
-                        </Link>
                     </CardContent>
                 </Card>
             </div>

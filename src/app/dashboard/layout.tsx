@@ -8,11 +8,10 @@ import {
   Gift,
   LayoutDashboard,
   LogOut,
-  Trophy,
   PanelLeft,
   Loader,
   Ticket,
-  HeartHandshake, // Import the new icon
+  HeartHandshake,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -33,9 +32,9 @@ const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
 const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
-  { href: '/dashboard/lucky-wheel', icon: Gift, label: 'عجلة الحظ' },
-  { href: '/dashboard/raffle', icon: Trophy, label: 'السحب اليومي' },
-  { href: '/dashboard/referrals', icon: HeartHandshake, label: 'الإحالات' }, // Add the new referrals link
+  { href: '/dashboard/rewards', icon: Gift, label: 'المكافأة اليومية' },
+  { href: '/dashboard/wheel', icon: Gift, label: 'عجلة الحظ' },
+  { href: '/dashboard/referrals', icon: HeartHandshake, label: 'الإحالات' },
 ];
 
 function SidebarNav({ items }: { items: typeof navItems }) {
