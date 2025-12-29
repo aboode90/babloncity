@@ -16,7 +16,7 @@ const fetcher = (url: string) => axios.get(url).then(res => res.data);
 export default function DashboardPage() {
     const { data: session, status } = useSession();
     
-    const { data: userData, isLoading: isBalanceLoading } = useSWR(session ? '/api/user/balance' : null, fetcher);
+    const { data: userData, isLoading: isBalanceLoading } = useSWR(session ? '/api/user/account' : null, fetcher);
     const { data: transactions, isLoading: isTransactionsLoading } = useSWR(session ? '/api/user/transactions' : null, fetcher);
     
     const isLoading = status === 'loading' || isBalanceLoading || isTransactionsLoading;
@@ -60,7 +60,7 @@ export default function DashboardPage() {
                         {isLoading ? (
                             <Loader className="h-8 w-8 animate-spin" />
                         ) : (
-                            <div className="text-4xl font-bold text-primary">{userData?.tickets?.toLocaleString() ?? 0} تذكرة</div>
+                            <div className="text-4xl font-bold text-primary">{userData?.VirtualCurrency?.TK?.toLocaleString() ?? 0} تذكرة</div>
                         )}
                         <p className="text-xs text-muted-foreground">استخدمها لتدوير العجلة أو دخول السحوبات!</p>
                     </CardContent>

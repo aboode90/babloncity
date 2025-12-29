@@ -22,14 +22,20 @@ export const authOptions: NextAuthConfig = {
             Password: credentials.password as string,
             InfoRequestParameters: {
               GetUserAccountInfo: true,
+              GetUserVirtualCurrency: true,
             },
           });
           
           if (result.data.SessionTicket && result.data.PlayFabId) {
+            console.log("PlayFabId:", result.data.PlayFabId);
+            console.log("Full Result:", result);
+            console.log("VirtualCurrency:", result.data.InfoResultPayload.UserVirtualCurrency);
+            console.log("TK Value:", result.data.InfoResultPayload.UserVirtualCurrency.TK);
             const user = {
                 id: result.data.PlayFabId,
                 email: result.data.InfoResultPayload.AccountInfo.PrivateInfo.Email,
                 name: result.data.InfoResultPayload.AccountInfo.TitleInfo.DisplayName,
+                tickets: result.data.InfoResultPayload.UserVirtualCurrency.TK,
             };
             return user;
           }
@@ -53,12 +59,14 @@ export const authOptions: NextAuthConfig = {
     async jwt({ token, user }) {
         if (user) {
             token.id = user.id; // user.id is the PlayFabId
+            token.tickets = (user as any).tickets;
         }
         return token;
     },
     async session({ session, token }) {
         if (session.user && token.id) {
             (session.user as any).id = token.id as string;
+            (session.user as any).tickets = token.tickets as number;
         }
         return session;
     },
