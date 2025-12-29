@@ -21,7 +21,7 @@ export async function GET(req: Request) {
             throw new Error(response.Error.Message);
         }
 
-        return NextResponse.json(response.FunctionResult.state);
+        return NextResponse.json(response.FunctionResult);
 
     } catch (error: any) {
         console.error("PlayFab API call failed:", error);

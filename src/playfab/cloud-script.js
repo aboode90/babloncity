@@ -53,10 +53,8 @@ handlers.getDailyRewardState = function(args, context) {
     const canClaim = canClaimReward(playfabId, state);
 
     return { 
-        state: { 
-            streak: state.streak, 
-            canClaim: canClaim 
-        }
+        streak: state.streak, 
+        canClaim: canClaim
     };
 };
 
@@ -224,8 +222,37 @@ handlers.distributeReferralCommission = function(args, context) {
 handlers.getReferralStats = function(args, context) {
     const playfabId = args.playfabId;
 
-    const userData = server.GetUserData({ PlayFabId: playfabId, Keys: ["InvitedPlayers"] }).Data;
-    const invitedList = userData["InvitedPlayers"] ? JSON.parse(userData["InvitedPlayers"].Value) : [];
+    // 1. Get Referral Code (which is the user's PlayFab ID)
+    const referralCode = playfabId;
 
-    return { count: invitedList.length };
+    // 2. Get Referred Users
+    const userData = server.GetUserData({ PlayFabId: playfabId, Keys: ["InvitedPlayers"] }).Data;
+    const invitedPlayerIds = userData["InvitedPlayers"] ? JSON.parse(userData["InvitedPlayers"].Value) : [];
+
+    const referredUsers = [];
+    for (const invitedId of invitedPlayerIds) {
+        const profile = server.GetPlayerProfile({ PlayFabId: invitedId }).PlayerProfile;
+        if (profile) {
+            referredUsers.push({
+                id: profile.PlayerId,
+                username: profile.DisplayName,
+                joinDate: profile.Created,
+                earningsGenerated: 0 // Placeholder for now
+            });
+        }
+    }
+
+    // 3. Get Earnings (Placeholder for now)
+    const earnings = {
+        today: 0,
+        thisWeek: 0,
+        allTime: 0
+    };
+
+    return {
+        referralCode: referralCode,
+        totalReferrals: invitedPlayerIds.length,
+        referredUsers: referredUsers,
+        earnings: earnings
+    };
 };
