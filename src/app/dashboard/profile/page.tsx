@@ -7,9 +7,8 @@ import { CircleUserRound, Edit, Loader } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useSession } from 'next-auth/react';
-import { useEffect, useState } from 'react';
-import axios from 'axios';
 import useSWR from 'swr';
+import axios from 'axios';
 
 const fetcher = (url: string) => axios.get(url).then(res => res.data);
 
@@ -17,14 +16,13 @@ export default function ProfilePage() {
     const avatar = PlaceHolderImages.find(p => p.id === 'avatar1');
     const { data: session } = useSession();
 
-    const { data: userData, error: userError, isLoading: isUserLoading } = useSWR(session ? '/api/user/balance' : null, fetcher);
-    const { data: accountData, error: accountError, isLoading: isAccountLoading } = useSWR(session ? '/api/user/account' : null, fetcher);
-     const { data: transactions, error: transactionsError, isLoading: isTransactionsLoading } = useSWR(session ? '/api/user/transactions' : null, fetcher);
+    const { data: userData, isLoading: isUserLoading } = useSWR(session ? '/api/user/account' : null, fetcher);
+    const { data: transactions, isLoading: isTransactionsLoading } = useSWR(session ? '/api/user/transactions' : null, fetcher);
 
-    const isLoading = isUserLoading || isAccountLoading || isTransactionsLoading;
+    const isLoading = isUserLoading || isTransactionsLoading;
 
-    const joinDate = accountData?.Created 
-        ? new Date(accountData.Created).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
+    const joinDate = userData?.Created 
+        ? new Date(userData.Created).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' })
         : '...';
 
     return (
@@ -48,7 +46,7 @@ export default function ProfilePage() {
                             <CardTitle className="text-2xl font-headline">{session?.user?.name || '...'}</CardTitle>
                             <CardDescription>{session?.user?.email || '...'}</CardDescription>
                             <p className="text-sm text-muted-foreground mt-2">
-                                {isAccountLoading ? 'جاري التحميل...' : `انضم في ${joinDate}`}
+                                {isUserLoading ? 'جاري التحميل...' : `انضم في ${joinDate}`}
                             </p>
                         </div>
                         <Button variant="outline" disabled>
@@ -58,14 +56,10 @@ export default function ProfilePage() {
                 </CardHeader>
                 <CardContent>
                     <Separator className="my-4" />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                         <div>
-                            <p className="text-sm text-muted-foreground">التذاكر (TK)</p>
-                            <p className="text-2xl font-bold">{isUserLoading ? <Loader className="h-6 w-6 animate-spin" /> : (userData?.tickets?.toLocaleString() ?? '0')}</p>
-                        </div>
-                         <div>
-                            <p className="text-sm text-muted-foreground">النقاط (PT)</p>
-                            <p className="text-2xl font-bold">{isUserLoading ? <Loader className="h-6 w-6 animate-spin" /> : (userData?.points?.toLocaleString() ?? '0')}</p>
+                    <div className="grid grid-cols-1 gap-4">
+                         <div className='text-center'>
+                            <p className="text-sm text-muted-foreground">تذاكرك</p>
+                            <p className="text-2xl font-bold">{isUserLoading ? <Loader className="h-6 w-6 animate-spin mx-auto" /> : (userData?.VirtualCurrency?.TK?.toLocaleString() ?? '0')}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -103,7 +97,7 @@ export default function ProfilePage() {
                                 </TableRow>
                             )) : (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center h-24">لا توجد معاملات لعرضها.</TableCell>
+                                    <TableCell colSpan={3} className="text-center h-24">لا يوجد معاملات لعرضها.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>

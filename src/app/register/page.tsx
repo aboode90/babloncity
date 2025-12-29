@@ -18,6 +18,7 @@ const registerSchema = z.object({
   username: z.string().min(3, { message: 'يجب أن يكون اسم المستخدم 3 أحرف على الأقل.' }),
   email: z.string().email({ message: 'الرجاء إدخال بريد إلكتروني صحيح.' }),
   password: z.string().min(6, { message: 'يجب أن لا تقل كلمة المرور عن 6 أحرف.' }),
+  referralCode: z.string().optional(), // Add optional referral code
 });
 
 export default function RegisterPage() {
@@ -30,12 +31,13 @@ export default function RegisterPage() {
       username: '',
       email: '',
       password: '',
+      referralCode: '',
     },
   });
 
   const onSubmit = async (values: z.infer<typeof registerSchema>) => {
     try {
-      // Step 1: Call the local API to register the user with PlayFab
+      // Step 1: Call the local API to register the user with PlayFab, passing the referral code
       await axios.post('/api/auth/register', values);
 
       // Step 2: Automatically sign the user in after successful registration
@@ -113,6 +115,19 @@ export default function RegisterPage() {
                       <FormLabel>كلمة المرور</FormLabel>
                       <FormControl>
                         <Input type="password" placeholder="أنشئ كلمة مرور قوية" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="referralCode"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col space-y-1.5">
+                      <FormLabel>رمز الإحالة (اختياري)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="أدخل الرمز إذا كان لديك واحد" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

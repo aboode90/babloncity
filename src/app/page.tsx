@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
-import { Award, Gift, Users, ChevronLeft } from 'lucide-react';
+import { Award, Gift, Users, HeartHandshake, ChevronLeft } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 const features = [
@@ -20,9 +20,9 @@ const features = [
     description: 'ادخل السحب اليومي للحصول على فرصة الفوز بالجائزة الكبرى. كلما لعبت أكثر، زادت فرصك.',
   },
   {
-    icon: <Users className="h-8 w-8 text-primary" />,
-    title: 'المجتمع',
-    description: 'انضم إلى مجتمع مزدهر من اللاعبين. تنافس على لوحات الصدارة وكوّن صداقات جديدة.',
+    icon: <HeartHandshake className="h-8 w-8 text-primary" />,
+    title: 'برنامج الإحالة',
+    description: 'ادعُ أصدقاءك واكسب نسبة من أرباحهم من التذاكر. تصل أرباحك إلى 15%!',
   },
 ];
 
@@ -35,6 +35,14 @@ const faqs = [
     question: 'كيف أحصل على التذاكر (TK)؟',
     answer: 'يمكنك كسب التذاكر من خلال لعب لعبة بابلون بلوك على الهاتف المحمول، والمشاركة في العروض الترويجية، وتدوير عجلة الحظ على هذه البوابة.',
   },
+  {
+    question: 'كيف يعمل برنامج الإحالة؟',
+    answer: 'عندما تقوم بدعوة أصدقائك إلى بابلون بلوك، فإنك تكسب نسبة مئوية من التذاكر التي يربحونها. كلما زاد عدد اللاعبين الذين تدعوهم، زادت النسبة التي تحصل عليها. تبدأ من 1% وتصل إلى 15%.'
+  },
+  {
+    question: 'ما هي مستويات الربح من الإحالة؟',
+    answer: 'تعتمد نسبة الربح على عدد المستخدمين الذين قمت بإحالتهم: 2 مستخدمين (1%)، 5 مستخدمين (2%)، 10 مستخدمين (5%)، 25 مستخدمًا (7%)، 50 مستخدمًا (10%)، و100 مستخدم أو أكثر (15%).'
+  }
 ];
 
 export default function Home() {

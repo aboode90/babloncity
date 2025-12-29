@@ -12,7 +12,7 @@ import {
   PanelLeft,
   Loader,
   Ticket,
-  CircleDollarSign,
+  HeartHandshake, // Import the new icon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -35,6 +35,7 @@ const navItems = [
   { href: '/dashboard', icon: LayoutDashboard, label: 'لوحة التحكم' },
   { href: '/dashboard/lucky-wheel', icon: Gift, label: 'عجلة الحظ' },
   { href: '/dashboard/raffle', icon: Trophy, label: 'السحب اليومي' },
+  { href: '/dashboard/referrals', icon: HeartHandshake, label: 'الإحالات' }, // Add the new referrals link
 ];
 
 function SidebarNav({ items }: { items: typeof navItems }) {
@@ -45,7 +46,7 @@ function SidebarNav({ items }: { items: typeof navItems }) {
         <Link key={index} href={item.href}>
           <span
             className={`group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground ${
-              pathname === item.href ? 'bg-accent text-accent-foreground' : 'transparent'
+              pathname.startsWith(item.href) ? 'bg-accent text-accent-foreground' : 'transparent'
             }`}
           >
             <item.icon className="ml-2 h-4 w-4" />
@@ -102,7 +103,8 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const { data: balanceData, isLoading: isBalanceLoading } = useSWR(session ? '/api/user/balance' : null, fetcher, { refreshInterval: 15000 });
+  // Updated to fetch account data which includes Virtual Currency (tickets)
+  const { data: userData, isLoading: isUserLoading } = useSWR(session ? '/api/user/account' : null, fetcher, { refreshInterval: 15000 });
 
 
   const handleLogout = () => {
@@ -142,11 +144,7 @@ export default function DashboardLayout({
           <div className="flex items-center gap-4 text-sm font-medium">
              <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1">
                 <Ticket className="h-4 w-4 text-primary"/>
-                {isBalanceLoading ? <Loader className="h-4 w-4 animate-spin"/> : <span className='font-semibold text-primary'>{balanceData?.tickets?.toLocaleString() ?? 0}</span>}
-            </div>
-             <div className="flex items-center gap-2 rounded-full bg-muted px-3 py-1">
-                <CircleDollarSign className="h-4 w-4 text-accent-foreground/80"/>
-                {isBalanceLoading ? <Loader className="h-4 w-4 animate-spin"/> :  <span className='font-semibold text-accent-foreground'>{balanceData?.points?.toLocaleString() ?? 0}</span>}
+                {isUserLoading ? <Loader className="h-4 w-4 animate-spin"/> : <span className='font-semibold text-primary'>{userData?.VirtualCurrency?.TK?.toLocaleString() ?? 0}</span>}
             </div>
           </div>
           
@@ -161,7 +159,7 @@ export default function DashboardLayout({
               <DropdownMenuLabel>حسابي</DropdownMenuLabel>
               <DropdownMenuSeparator />
                <Link href="/dashboard/profile"><DropdownMenuItem>الملف الشخصي</DropdownMenuItem></Link>
-              <DropdownMenuItem>الإعدادات</DropdownMenuItem>
+              <DropdownMenuItem disabled>الإعدادات</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="ml-2 h-4 w-4" />
